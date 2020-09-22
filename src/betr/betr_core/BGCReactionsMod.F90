@@ -17,7 +17,7 @@ module BGCReactionsMod
   type, abstract :: bgc_reaction_type
      private
      ! dummy var to remove compiler warnings
-     logical, public :: dummy_compiler_warning
+     logical, public :: dummy_compiler_warning=.true.
    contains
      !initialize betr bgc
      procedure(Init_betrbgc_interface)                    , deferred :: Init_betrbgc
@@ -47,6 +47,15 @@ module BGCReactionsMod
 
      procedure(debug_info_interface)                      , deferred :: debug_info
 
+     procedure(set_bgc_spinup_interface)                  , deferred :: set_bgc_spinup
+
+     procedure(UpdateParas_interface)                     , deferred :: UpdateParas
+
+     procedure(init_iP_prof_interface)                    , deferred :: init_iP_prof
+
+     procedure(reset_biostates_interface)                 , deferred :: reset_biostates
+
+     procedure(SetParCols_interface)                      , deferred :: SetParCols
   end type bgc_reaction_type
 
   abstract interface
@@ -74,11 +83,66 @@ module BGCReactionsMod
        type(betr_status_type)   , intent(out)   :: bstatus
 
      end subroutine Init_betrbgc_interface
+
+
+  !----------------------------------------------------------------------
+  subroutine init_iP_prof_interface(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+  !
+  !DESCRIPTION
+  ! set up initial inorganic P profile
+  use BeTR_decompMod  , only : betr_bounds_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType        , only : betrtracer_type
+  ! !ARGUMENTS:
+  import :: bgc_reaction_type
+  implicit none
+  class(bgc_reaction_type) , intent(inout)    :: this
+  type(betr_bounds_type)                  , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  type(BeTRtracer_type)                    , intent(inout) :: tracers
+  type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
+
+  end subroutine init_iP_prof_interface
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas_interface(this, bounds, lbj, ubj, bstatus)
+
+   use BeTR_decompMod  , only : betr_bounds_type
+   use BetrStatusType  , only : betr_status_type
+  ! !ARGUMENTS:
+  import :: bgc_reaction_type
+  implicit none
+  class(bgc_reaction_type) , intent(inout)    :: this
+  type(betr_bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
+  type(betr_status_type)           , intent(out)   :: bstatus
+
+  end subroutine UpdateParas_interface
+  !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup_interface(this, bounds, lbj, ubj,  biophysforc, &
+  tracers, tracerstate_vars)
+    use tracerstatetype        , only : tracerstate_type
+    use BeTRTracerType        , only : betrtracer_type
+    use BeTR_decompMod        , only : betr_bounds_type
+    use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+
+  ! !ARGUMENTS:
+    import :: bgc_reaction_type
+    implicit none
+    class(bgc_reaction_type) , intent(inout)    :: this
+    type(betr_bounds_type)                  , intent(in) :: bounds
+    integer                                 , intent(in) :: lbj, ubj
+    type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+    type(BeTRtracer_type)                   , intent(inout) :: tracers
+    type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
+
+  end subroutine set_bgc_spinup_interface
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
-          num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc,    &
+          num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars,  biophysforc,    &
           tracerstate_vars, tracerflux_vars,  tracerboundarycond_vars, plant_soilbgc, biogeo_flux,&
-          betr_status)
+          biogeo_state, betr_status)
        !
        ! !DESCRIPTION:
        ! template for calc_bgc_reaction
@@ -97,8 +161,10 @@ module BGCReactionsMod
        use betr_columnType          , only : betr_column_type
        use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
        use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+       use BeTR_TimeMod             , only : betr_time_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
+       implicit none
        class(bgc_reaction_type)         , intent(inout)   :: this
        type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
        type(betr_column_type)           , intent(in)    :: col
@@ -108,15 +174,16 @@ module BGCReactionsMod
        integer                          , intent(in)    :: filter_soilp(:)
        integer                          , intent(in)    :: jtops( : )                  ! top index of each column
        integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
-       real(r8)                         , intent(in)    :: dtime                       ! model time step
+       type(betr_time_type)             , intent(in)    :: betr_time                      ! model time step
        type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
-       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
-       type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
+       type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
+       type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
        type(tracerstate_type)           , intent(inout) :: tracerstate_vars
        type(tracerflux_type)            , intent(inout) :: tracerflux_vars
        type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
        class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
        type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+       type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
        type(betr_status_type)           , intent(out)   :: betr_status
 
      end subroutine calc_bgc_reaction_interface
@@ -141,21 +208,25 @@ module BGCReactionsMod
 
      end subroutine retrieve_lnd2atm_interface
      !----------------------------------------------------------------------
-     subroutine set_kinetics_par_interface(this, lbj, ubj, nactpft, plantNutkinetics)
+     subroutine set_kinetics_par_interface(this, lbj, ubj, nactpft, &
+       plantNutkinetics, tracers, tracercoeff_vars)
      use PlantNutKineticsMod, only : PlantNutKinetics_type
-
+     use tracercoeffType          , only : tracercoeff_type
+     use BeTRTracerType           , only : betrtracer_type
      ! !ARGUMENTS:
      import :: bgc_reaction_type
      class(bgc_reaction_type)         , intent(inout)    :: this                       !
      class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+     type(BeTRtracer_type), intent(in) :: tracers
+     type(tracercoeff_type)      , intent(inout) :: tracercoeff_vars
      integer, intent(in) :: lbj, ubj
      integer, intent(in) :: nactpft
 
      end subroutine set_kinetics_par_interface
      !----------------------------------------------------------------------
 
-     subroutine set_boundary_conditions_interface(this, bounds, num_soilc, filter_soilc, dz_top, &
-          betrtracer_vars, biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+     subroutine set_boundary_conditions_interface(this, bounds, num_soilc, filter_soilc, jtops, dz_top, &
+          betr_time, betrtracer_vars, biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
 
        ! !DESCRIPTION:
        ! template for set_boundary_conditions
@@ -168,6 +239,8 @@ module BGCReactionsMod
        use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
        use bshr_kind_mod            , only : r8 => shr_kind_r8
        use BetrStatusType           , only : betr_status_type
+       use TracerCoeffType        , only : tracercoeff_type
+       use BeTR_TimeMod             , only : betr_time_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(inout)    :: this                       !
@@ -175,9 +248,12 @@ module BGCReactionsMod
        integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter
        integer                          , intent(in)    :: filter_soilc(:)            ! column filter
        type(betrtracer_type)            , intent(in)    :: betrtracer_vars            !
+       integer                          , intent(in)    :: jtops(bounds%begc: )
        real(r8)                         , intent(in)    :: dz_top( : )                !
+       type(betr_time_type)             , intent(in)    :: betr_time
        type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
        type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
+       type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
        type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
        type(betr_status_type)           , intent(out)   :: betr_status
 
@@ -326,5 +402,43 @@ module BGCReactionsMod
      type(betr_status_type)               , intent(out):: betr_status
 
      end subroutine retrieve_biostates_interface
+
+   !----------------------------------------------------------------------
+   subroutine reset_biostates_interface(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, biophysforc,  tracerstate_vars, betr_status)
+
+       ! !USES:
+       use bshr_kind_mod            , only : r8 => shr_kind_r8
+       use tracerstatetype          , only : tracerstate_type
+       use BeTR_decompMod           , only : betr_bounds_type
+       use BeTRTracerType           , only : BeTRTracer_Type
+       use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+       use BetrStatusType           , only : betr_status_type
+       use betr_columnType          , only : betr_column_type
+
+       ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)   , intent(inout) :: this                  !
+
+       type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+       integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+       integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+       integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+       integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+       type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+       type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+       type(betr_status_type)           , intent(out)   :: betr_status
+
+   end subroutine reset_biostates_interface
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols_interface(this, parcol)
+       ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)   , intent(inout) :: this
+     integer, intent(in):: parcol
+
+   end subroutine SetParCols_interface
   end interface
 end module BGCReactionsMod

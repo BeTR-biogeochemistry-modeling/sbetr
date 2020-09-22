@@ -5,19 +5,13 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Unicode test */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include "testhdf5.h"
 
 #define NUM_CHARS 16
@@ -169,8 +163,8 @@ void test_strpad(hid_t H5_ATTR_UNUSED fid, const char *string)
 
     /* Fill the buffer with two copies of the UTF-8 string, each with a
      * terminating NULL.  It will look like "abcdefg\0abcdefg\0". */
-    strncpy(buf, new_string, big_len);
-    strncpy(&buf[big_len], new_string, big_len);
+    HDstrncpy(buf, new_string, big_len);
+    HDstrncpy(&buf[big_len], new_string, big_len);
 
     ret = H5Tconvert(src_type, dst_type, (size_t)2, buf, NULL, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Tconvert");
@@ -232,8 +226,8 @@ void test_strpad(hid_t H5_ATTR_UNUSED fid, const char *string)
 
     /* Fill the buffer with two copies of the UTF-8 string.
      * It will look like "abcdefghabcdefgh". */
-    strncpy(buf, new_string, big_len);
-    strncpy(&buf[big_len], new_string, big_len);
+    HDstrncpy(buf, new_string, big_len);
+    HDstrncpy(&buf[big_len], new_string, big_len);
 
     ret = H5Tconvert(src_type, dst_type, (size_t)2, buf, NULL, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Tconvert");
@@ -358,8 +352,8 @@ void test_vl_string(hid_t fid, const char *string)
   VERIFY(HDstrcmp(string, read_buf[0]), 0, "strcmp");
 
   /* Reclaim the read VL data */
-  ret = H5Dvlen_reclaim(type_id, space_id, H5P_DEFAULT, read_buf);
-  CHECK(ret, FAIL, "H5Dvlen_reclaim");
+  ret = H5Treclaim(type_id, space_id, H5P_DEFAULT, read_buf);
+  CHECK(ret, FAIL, "H5Treclaim");
 
   /* Close all */
   ret = H5Dclose(dset_id);
@@ -388,6 +382,7 @@ void test_objnames(hid_t fid, const char* string)
   char path_buf[MAX_PATH_LENGTH];
   hsize_t dims=1;
   hobj_ref_t obj_ref;
+  ssize_t size;
   herr_t ret;
 
   /* Create a group with a UTF-8 name */
@@ -399,8 +394,8 @@ void test_objnames(hid_t fid, const char* string)
    */
   ret = H5Oset_comment_by_name(fid, string, string, H5P_DEFAULT);
   CHECK(ret, FAIL, "H5Oset_comment_by_name");
-  ret = H5Oget_comment_by_name(fid, string, read_buf, (size_t)MAX_STRING_LENGTH, H5P_DEFAULT);
-  CHECK(ret, FAIL, "H5Oget_comment_by_name");
+  size = H5Oget_comment_by_name(fid, string, read_buf, (size_t)MAX_STRING_LENGTH, H5P_DEFAULT);
+  CHECK(size, FAIL, "H5Oget_comment_by_name");
 
   ret = H5Gclose(grp_id);
   CHECK(ret, FAIL, "H5Gclose");
@@ -463,8 +458,8 @@ void test_objnames(hid_t fid, const char* string)
   CHECK(ret, FAIL, "H5Dread");
 
   /* Ensure that we can open named datatype using object reference */
-  type_id = H5Rdereference(dset_id, H5R_OBJECT, &obj_ref);
-  CHECK(type_id, FAIL, "H5Rdereference");
+  type_id = H5Rdereference2(dset_id, H5P_DEFAULT, H5R_OBJECT, &obj_ref);
+  CHECK(type_id, FAIL, "H5Rdereference2");
   ret = H5Tcommitted(type_id);
   VERIFY(ret, 1, "H5Tcommitted");
 
@@ -514,6 +509,7 @@ void test_attrname(hid_t fid, const char * string)
   hid_t dtype_id, space_id;
   hsize_t dims=1;
   char read_buf[MAX_STRING_LENGTH];
+  ssize_t size;
   herr_t ret;
 
  /* Create a new group and give it an attribute whose
@@ -532,8 +528,8 @@ void test_attrname(hid_t fid, const char * string)
   /* Create the attribute and check that its name is correct */
   attr_id = H5Acreate2(group_id, string, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
   CHECK(attr_id, FAIL, "H5Acreate2");
-  ret = H5Aget_name(attr_id, (size_t)MAX_STRING_LENGTH, read_buf);
-  CHECK(ret, FAIL, "H5Aget_name");
+  size = H5Aget_name(attr_id, (size_t)MAX_STRING_LENGTH, read_buf);
+  CHECK(size, FAIL, "H5Aget_name");
   ret = strcmp(read_buf, string);
   VERIFY(ret, 0, "strcmp");
   read_buf[0] = '\0';
@@ -744,25 +740,25 @@ static hid_t mkstr(size_t len, H5T_str_t strpad)
 unsigned int write_char(unsigned int c, char * test_string, unsigned int cur_pos)
 {
   if (c < 0x80) {
-    test_string[cur_pos] = c;
+    test_string[cur_pos] = (char)c;
     cur_pos++;
   }
   else if (c < 0x800) {
-    test_string[cur_pos] = (0xC0 | c>>6);
-    test_string[cur_pos+1] = (0x80 | (c & 0x3F));
+    test_string[cur_pos] = (char)(0xC0 | c >> 6);
+    test_string[cur_pos + 1] = (char)(0x80 | (c & 0x3F));
     cur_pos += 2;
   }
   else if (c < 0x10000) {
-    test_string[cur_pos] = (0xE0 | c>>12);
-    test_string[cur_pos+1] = (0x80 | (c>>6 & 0x3F));
-    test_string[cur_pos+2] = (0x80 | (c & 0x3F));
+    test_string[cur_pos] = (char)(0xE0 | c >> 12);
+    test_string[cur_pos + 1] = (char)(0x80 | (c >> 6 & 0x3F));
+    test_string[cur_pos + 2] = (char)(0x80 | (c & 0x3F));
     cur_pos += 3;
   }
   else if (c < 0x200000) {
-    test_string[cur_pos] = (0xF0 | c>>18);
-    test_string[cur_pos+1] = (0x80 | (c>>12 & 0x3F));
-    test_string[cur_pos+2] = (0x80 | (c>>6 & 0x3F));
-    test_string[cur_pos+3] = (0x80 | (c & 0x3F));
+    test_string[cur_pos] = (char)(0xF0 | c >> 18);
+    test_string[cur_pos + 1] = (char)(0x80 | (c >> 12 & 0x3F));
+    test_string[cur_pos + 2] = (char)(0x80 | (c >> 6 & 0x3F));
+    test_string[cur_pos + 3] = (char)(0x80 | (c & 0x3F));
     cur_pos += 4;
   }
 
@@ -775,18 +771,18 @@ unsigned int write_char(unsigned int c, char * test_string, unsigned int cur_pos
  * could confuse printf (e.g., '\n'). */
 void dump_string(const char * string)
 {
-  unsigned int length;
-  unsigned int x;
+  size_t length;
+  size_t x;
 
-  printf("The string was:\n %s", string);
-  printf("Or in hex:\n");
+  HDprintf("The string was:\n %s", string);
+  HDprintf("Or in hex:\n");
 
-  length = strlen(string);
+  length = HDstrlen(string);
 
   for(x=0; x<length; x++)
-    printf("%x ", string[x] & (0x000000FF));
+    HDprintf("%x ", string[x] & (0x000000FF));
 
-  printf("\n");
+  HDprintf("\n");
 }
 
 /* Main test.
@@ -814,7 +810,7 @@ void test_unicode(void)
     /* We need to avoid unprintable characters (codes 0-31) and the
      * . and / characters, since they aren't allowed in path names.
      */
-    unicode_point = (HDrandom() % (MAX_CODE_POINT-32)) + 32;
+    unicode_point = (unsigned)(HDrandom() % (MAX_CODE_POINT-32)) + 32;
     if(unicode_point != 46 && unicode_point != 47)
       cur_pos = write_char(unicode_point, test_string, cur_pos);
   }
@@ -858,7 +854,7 @@ void test_unicode(void)
  */
 void cleanup_unicode(void)
 {
-    remove(FILENAME);
+    HDremove(FILENAME);
 }
 
 

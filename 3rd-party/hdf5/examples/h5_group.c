@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -28,9 +26,9 @@
 #define H5FILE_NAME    "group.h5"
 #define RANK    2
 
-static herr_t file_info(hid_t loc_id, const char *name, const H5L_info_t *linfo,
+static herr_t file_info(hid_t loc_id, const char *name, const H5L_info2_t *linfo,
     void *opdata);              /* Link iteration operator function */
-static herr_t group_info(hid_t loc_id, const char *name, const H5L_info_t *linfo,
+static herr_t group_info(hid_t loc_id, const char *name, const H5L_info2_t *linfo,
     void *opdata);              /* Link iteration operator function */
 int
 main(void)
@@ -137,7 +135,7 @@ main(void)
     /*
      * Use iterator to see the names of the objects in the root group.
      */
-    idx_f = H5Literate(file, H5_INDEX_NAME, H5_ITER_INC, NULL, file_info, NULL);
+    idx_f = H5Literate2(file, H5_INDEX_NAME, H5_ITER_INC, NULL, file_info, NULL);
 
     /*
      * Unlink  name "Data" and use iterator to see the names
@@ -148,13 +146,13 @@ main(void)
     else
       printf("\"Data\" is unlinked \n");
 
-    idx_f = H5Literate(file, H5_INDEX_NAME, H5_ITER_INC, NULL, file_info, NULL);
+    idx_f = H5Literate2(file, H5_INDEX_NAME, H5_ITER_INC, NULL, file_info, NULL);
 
     /*
      * Use iterator to see the names of the objects in the group
      * /Data_new.
      */
-    idx_g = H5Literate_by_name(grp, "/Data_new", H5_INDEX_NAME, H5_ITER_INC, NULL, group_info, NULL, H5P_DEFAULT);
+    idx_g = H5Literate_by_name2(grp, "/Data_new", H5_INDEX_NAME, H5_ITER_INC, NULL, group_info, NULL, H5P_DEFAULT);
 
     /*
      * Close the file.
@@ -170,7 +168,7 @@ main(void)
  * Operator function.
  */
 static herr_t
-file_info(hid_t loc_id, const char *name, const H5L_info_t *linfo, void *opdata)
+file_info(hid_t loc_id, const char *name, const H5L_info2_t *linfo, void *opdata)
 {
     /* avoid compiler warnings */
     loc_id = loc_id;
@@ -191,7 +189,7 @@ file_info(hid_t loc_id, const char *name, const H5L_info_t *linfo, void *opdata)
  * Operator function.
  */
 static herr_t
-group_info(hid_t loc_id, const char *name, const H5L_info_t *linfo, void *opdata)
+group_info(hid_t loc_id, const char *name, const H5L_info2_t *linfo, void *opdata)
 {
     hid_t did;  /* dataset identifier  */
     hid_t tid;  /* datatype identifier */

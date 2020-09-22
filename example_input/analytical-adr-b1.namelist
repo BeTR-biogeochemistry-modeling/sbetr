@@ -1,0 +1,27 @@
+&sbetr_driver
+  simulator_name = 'standalone'
+/
+
+&betr_parameters
+  reaction_method = 'tracer1beck_run'
+/
+
+&betr_time
+  stop_n = 365
+  delta_time=1800.
+  stop_option='ndays'
+/
+
+&forcing_inparm
+  forcing_type_name ='steady state'
+  forcing_filename = './input_data/uniform_steadystate_sat_forcing.cdl.nc'
+/
+
+&betr_grid
+  grid_data_filename = './input_data/clm_exp_grid_const.cdl.nc'
+/
+
+&regression_test
+  write_regression_output = .false.
+  cells = 5
+/

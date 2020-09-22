@@ -18,6 +18,10 @@ module BeTR_ColumnType
    integer , pointer :: pfti     (:)   => null() ! beginning pft index for each column
    integer , pointer :: pftf     (:)   => null() ! ending pft index for each column
    integer , pointer :: npfts    (:)   => null() ! number of patches for each column
+   real(r8), pointer :: dz_snow  (:,:) => null()
+   integer,  pointer :: lbots    (:)   => null()
+   logical , pointer :: is_wetl  (:)   => null() !logical switch indicate if it is lake or wetland
+   integer , pointer :: lzsoi_beg(:)   => null()
   contains
     procedure, public :: Init
   end type betr_column_type
@@ -44,10 +48,11 @@ contains
   type(betr_bounds_type), intent(in) :: bounds
   integer :: begc, endc
   integer :: lbj, ubj
+  integer :: nlevsno
 
   lbj = bounds%lbj; ubj = bounds%ubj
   begc = bounds%begc; endc = bounds%endc
-
+  nlevsno= bounds%nlevsno
   allocate(this%snl(begc:endc))          ; this%snl(:) = ispval
   allocate(this%dz(begc:endc, lbj:ubj))  ;
   allocate(this%zi(begc:endc,lbj-1:ubj)) ;
@@ -55,5 +60,9 @@ contains
   allocate(this%npfts(begc:endc))
   allocate(this%pfti(begc:endc))
   allocate(this%pftf(begc:endc))
+  allocate(this%is_wetl(begc:endc)); this%is_wetl(:) = .false.
+  allocate(this%dz_snow(begc:endc,-nlevsno+1:0))
+  allocate(this%lbots(begc:endc)); this%lbots(:) = ubj
+  allocate(this%lzsoi_beg(begc:endc)); this%lzsoi_beg(:) = 1
   end subroutine Init
 end module BeTR_ColumnType

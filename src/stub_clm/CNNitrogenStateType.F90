@@ -6,19 +6,25 @@ module CNNitrogenStateType
 implicit none
 
   type, public :: nitrogenstate_type
-    real(r8), pointer :: decomp_npools_vr_col         (:,:,:) => null()! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
-    real(r8), pointer :: smin_no3_vr_col              (:,:)  => null() ! col (gN/m3) vertically-resolved soil mineral NO3
-    real(r8), pointer :: smin_no3_col                 (:)   => null()  ! col (gN/m2) soil mineral NO3 pool
-    real(r8), pointer :: smin_nh4_vr_col              (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral NH4
-    real(r8), pointer :: smin_nh4_col                 (:)   => null()  ! col (gN/m2) soil mineral NH4 pool
-    real(r8), pointer :: sminn_vr_col                 (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral N
-    real(r8), pointer :: sminn_col                    (:) => null()
-    real(r8), pointer :: cwdn_col                     (:) => null()
-    real(r8), pointer :: totsomn_col                  (:) => null()
-    real(r8), pointer :: totsomn_1m_col               (:) => null()
-    real(r8), pointer :: totlitn_1m_col               (:) => null()
-    real(r8), pointer :: totlitn_col                  (:) => null()
-    real(r8), pointer :: pnup_pfrootc_patch           (:) => null()
+    real(r8), pointer :: decomp_npools_vr         (:,:,:) => null()! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
+    real(r8), pointer :: smin_no3_vr              (:,:)  => null() ! col (gN/m3) vertically-resolved soil mineral NO3
+    real(r8), pointer :: smin_no3                 (:)   => null()  ! col (gN/m2) soil mineral NO3 pool
+    real(r8), pointer :: smin_nh4_vr              (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral NH4
+    real(r8), pointer :: smin_nh4                 (:)   => null()  ! col (gN/m2) soil mineral NH4 pool
+    real(r8), pointer :: sminn_vr                 (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral N
+    real(r8), pointer :: sminn                    (:) => null()
+    real(r8), pointer :: cwdn                     (:) => null()
+    real(r8), pointer :: totsomn                  (:) => null()
+    real(r8), pointer :: totsomn_1m               (:) => null()
+    real(r8), pointer :: totlitn_1m               (:) => null()
+    real(r8), pointer :: totlitn                  (:) => null()
+    real(r8), pointer :: som1n                    (:) => null()
+    real(r8), pointer :: som2n                    (:) => null()
+    real(r8), pointer :: som3n                    (:) => null()
+    real(r8), pointer :: domn                     (:) => null()
+    real(r8), pointer :: beg_totsoin              (:) => null()
+    real(r8), pointer :: totsoin                  (:) => null()
+    real(r8), pointer :: nmass_residual            (:) => null()
   contains
 
     procedure, public  :: Init
@@ -58,14 +64,32 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%decomp_npools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
-    this%decomp_npools_vr_col(:,:,:)= nan
-    allocate(this%smin_no3_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr_col          (:,:) = nan
-    allocate(this%smin_nh4_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr_col          (:,:) = nan
-    allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = nan
-    allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
-    allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan
-    allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = nan
+    begc = bounds%begc; endc= bounds%endc
+    if(nlevdecomp_full>0)then
+      if(ndecomp_pools>0)then
+        allocate(this%decomp_npools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
+        this%decomp_npools_vr(:,:,:)= spval
+      endif
+      allocate(this%smin_no3_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr          (:,:) = spval
+      allocate(this%smin_nh4_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr          (:,:) = spval
+      allocate(this%sminn_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr             (:,:) = spval
+    endif
+    allocate(this%smin_no3             (begc:endc))                   ; this%smin_no3             (:)   = spval
+    allocate(this%smin_nh4             (begc:endc))                   ; this%smin_nh4             (:)   = spval
+    allocate(this%cwdn(begc:endc)); this%cwdn(:) = spval
+    allocate(this%totlitn(begc:endc)); this%totlitn(:) = spval
+    allocate(this%totsomn(begc:endc)); this%totsomn(:) = spval
+    allocate(this%totlitn_1m(begc:endc)); this%totlitn_1m(:) = spval
+    allocate(this%totsomn_1m(begc:endc)); this%totsomn_1m(:) = spval
+    allocate(this%som1n(begc:endc)); this%som1n(:) = spval
+    allocate(this%som2n(begc:endc)); this%som2n(:) = spval
+    allocate(this%som3n(begc:endc)); this%som3n(:) = spval
+    allocate(this%sminn(begc:endc)); this%sminn(:) = spval
+    allocate(this%domn(begc:endc)); this%domn(:) = spval
+
+    allocate(this%beg_totsoin(begc:endc)); this%beg_totsoin(:) = spval
+    allocate(this%totsoin(begc:endc)); this%totsoin(:) = spval
+    allocate(this%nmass_residual(begc:endc)); this%nmass_residual(:) = spval
 
   end subroutine InitAllocate
 
@@ -97,6 +121,10 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+
+    begc=bounds%begc; endc=bounds%endc
+
+    this%totsoin(begc:endc) = 0._r8
 
   end subroutine initCold
 

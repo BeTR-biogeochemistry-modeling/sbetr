@@ -1,6 +1,6 @@
 /****h* H5Of/H5Of
  * PURPOSE
- *   This file contains C stubs for H5O Fortran APIs
+ *  This file contains C stubs for H5O Fortran APIs
  *
  * COPYRIGHT
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -10,12 +10,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  ******
@@ -24,16 +22,20 @@
 #include "H5f90.h"
 #include "H5Eprivate.h"
 int_f
-fill_h5o_info_t_f(H5O_info_t Oinfo, H5O_info_t_f *object_info);
+fill_h5o_info_t_f(H5O_info2_t Oinfo, H5O_info_t_f *object_info);
 
 int_f
-fill_h5o_info_t_f(H5O_info_t Oinfo, H5O_info_t_f *object_info) {
+fill_h5o_info_t_f(H5O_info2_t Oinfo, H5O_info_t_f *object_info) {
+
+  /* This function does not used the field parameter because we want 
+   * this function to fill the unfilled fields with C's default values.
+   */
 
   struct tm *ts;
 
   object_info->fileno    = Oinfo.fileno;
-  object_info->addr      = (haddr_t_f)Oinfo.addr;
- 
+  object_info->token     = Oinfo.token;
+
   object_info->type      = (int_f)Oinfo.type;
   object_info->rc        = (int_f)Oinfo.rc;
 
@@ -83,22 +85,6 @@ fill_h5o_info_t_f(H5O_info_t Oinfo, H5O_info_t_f *object_info) {
 
   object_info->num_attrs = (hsize_t_f)Oinfo.num_attrs;
 
-  object_info->hdr.version = (int_f)Oinfo.hdr.version;
-  object_info->hdr.nmesgs  = (int_f)Oinfo.hdr.nmesgs;
-  object_info->hdr.nchunks = (int_f)Oinfo.hdr.nchunks;
-  object_info->hdr.flags   = (int_f)Oinfo.hdr.flags;
-
-  object_info->hdr.space.total = (hsize_t_f)Oinfo.hdr.space.total;
-  object_info->hdr.space.meta  = (hsize_t_f)Oinfo.hdr.space.meta;
-  object_info->hdr.space.mesg  = (hsize_t_f)Oinfo.hdr.space.mesg;
-  object_info->hdr.space.free  = (hsize_t_f)Oinfo.hdr.space.free;
-
-  object_info->hdr.mesg.present = Oinfo.hdr.mesg.present;
-  object_info->hdr.mesg.shared  = Oinfo.hdr.mesg.shared;
-
-  object_info->meta_size.obj.index_size = (hsize_t_f)Oinfo.meta_size.obj.index_size;
-  object_info->meta_size.obj.heap_size  = (hsize_t_f)Oinfo.meta_size.obj.heap_size;
-
   return 0;
 
 }
@@ -109,12 +95,12 @@ fill_h5o_info_t_f(H5O_info_t Oinfo, H5O_info_t_f *object_info) {
  * PURPOSE
  *  Calls H5Olink
  * INPUTS
- *      object_id        - Object to be linked.
- *      new_loc_id       - File or group identifier specifying location at which object is to be linked.
- *      name             - Name of link to be created, relative to new_loc_id.
- *      namelen          - Length of buffer for link to be created.
- *      lcpl_id          - Link creation property list identifier.
- *      lapl_id          - Link access property list identifier.
+ *  object_id        - Object to be linked.
+ *  new_loc_id       - File or group identifier specifying location at which object is to be linked.
+ *  name             - Name of link to be created, relative to new_loc_id.
+ *  namelen          - Length of buffer for link to be created.
+ *  lcpl_id          - Link creation property list identifier.
+ *  lapl_id          - Link access property list identifier.
  * RETURNS
  *  0 on success, -1 on failure
  * AUTHOR
@@ -123,7 +109,7 @@ fill_h5o_info_t_f(H5O_info_t Oinfo, H5O_info_t_f *object_info) {
  * SOURCE
 */
 int_f
-nh5olink_c (hid_t_f *object_id, hid_t_f *new_loc_id, _fcd name, size_t_f *namelen,
+h5olink_c (hid_t_f *object_id, hid_t_f *new_loc_id, _fcd name, size_t_f *namelen,
             hid_t_f *lcpl_id, hid_t_f *lapl_id)
 /******/
 {
@@ -140,7 +126,7 @@ nh5olink_c (hid_t_f *object_id, hid_t_f *new_loc_id, _fcd name, size_t_f *namele
    * Call H5Olink function.
    */
   if((hid_t_f)H5Olink((hid_t)*object_id, (hid_t)*new_loc_id, c_name,
-		       (hid_t)*lcpl_id, (hid_t)*lapl_id) < 0)
+                      (hid_t)*lcpl_id, (hid_t)*lapl_id) < 0)
     HGOTO_DONE(FAIL);
 
  done:
@@ -169,7 +155,7 @@ nh5olink_c (hid_t_f *object_id, hid_t_f *new_loc_id, _fcd name, size_t_f *namele
  * SOURCE
 */
 int_f
-nh5oopen_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id, hid_t_f *obj_id)
+h5oopen_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id, hid_t_f *obj_id)
 /******/
 {
   char *c_name = NULL;          /* Buffer to hold C string */
@@ -194,20 +180,20 @@ nh5oopen_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id, hid
 }
 /****if* H5Of/h5oclose_c
  * NAME
- *   h5oclose_c
+ *  h5oclose_c
  * PURPOSE
- *   Call H5Oclose
+ *  Call H5Oclose
  * INPUTS
- *   object_id   - Object identifier  
+ *  object_id   - Object identifier  
  * RETURNS
- *   0 on success, -1 on failure
+ *  0 on success, -1 on failure
  * AUTHOR
  *   M. Scot Breitenfeld
- *   December 17, 2008
+ *  December 17, 2008
  * SOURCE
 */
 int_f
-nh5oclose_c ( hid_t_f *object_id )
+h5oclose_c ( hid_t_f *object_id )
 /******/
 {
   int_f ret_value=0;          /* Return value */
@@ -225,15 +211,16 @@ nh5oclose_c ( hid_t_f *object_id )
  * PURPOSE
  *  Calls H5Ovisit
  * INPUTS
- *    object_id - Identifier specifying subject group
- *   index_type - Type of index which determines the order
- *        order - Order within index
- *          idx - Iteration position at which to start
- *           op - Callback function passing data regarding the link to the calling application
- *      op_data - User-defined pointer to data required by the application for its processing of the link
+ *  object_id - Identifier specifying subject group
+ *  index_type - Type of index which determines the order
+ *  order - Order within index
+ *  idx - Iteration position at which to start
+ *  op - Callback function passing data regarding the link to the calling application
+ *  op_data - User-defined pointer to data required by the application for its processing of the link
+ *  fields - Flags specifying the fields to include in object_info.
  *
  * OUTPUTS
- *          idx - Position at which an interrupted iteration may be restarted
+ *  idx - Position at which an interrupted iteration may be restarted
  *
  * RETURNS
  *     >0 on success, 0< on failure
@@ -243,7 +230,8 @@ nh5oclose_c ( hid_t_f *object_id )
  * SOURCE
 */
 int_f
-h5ovisit_c(hid_t_f *group_id, int_f *index_type, int_f *order, H5O_iterate_t op, void *op_data )
+h5ovisit_c(hid_t_f *group_id, int_f *index_type, int_f *order, H5O_iterate2_t op,
+    void *op_data, int_f *fields )
 /******/
 {
   int_f ret_value = -1;       /* Return value */
@@ -252,42 +240,43 @@ h5ovisit_c(hid_t_f *group_id, int_f *index_type, int_f *order, H5O_iterate_t op,
   /*
    * Call H5Ovisit
    */
-  func_ret_value = H5Ovisit( (hid_t)*group_id, (H5_index_t)*index_type, (H5_iter_order_t)*order, op, op_data);
+
+  func_ret_value = H5Ovisit3( (hid_t)*group_id, (H5_index_t)*index_type, (H5_iter_order_t)*order, op, op_data, (unsigned)*fields);
 
   ret_value = (int_f)func_ret_value;
 
   return ret_value;
 }
 
-/****if* H5Of/h5oopen_by_addr_c
+/****if* H5Of/h5oopen_by_token_c
  * NAME
- *  h5oopen_by_addr_c
+ *  h5oopen_by_token_c
  * PURPOSE
- *  Calls H5open_by_addr
+ *  Calls H5open_by_token
  * INPUTS
- *  loc_id  - File or group identifier
- *    addr  - Object’s address in the file
+ *  loc_id - File or group identifier
+ *  token  - Object’s token in the file
  *
  * OUTPUTS
- *  obj_id  - Dataset identifier      
+ *  obj_id  - Object identifier
  *
  * RETURNS
- *     0 on success, -1 on failure
+ *  0 on success, -1 on failure
  * AUTHOR
  *  M. Scot Breitenfeld
  *  September 14, 2009
  * SOURCE
 */
 int_f
-nh5oopen_by_addr_c (hid_t_f *loc_id, haddr_t_f *addr, hid_t_f *obj_id)
+h5oopen_by_token_c(hid_t_f *loc_id, H5O_token_t *token, hid_t_f *obj_id)
 /******/
 {
   int_f ret_value = 0;          /* Return value */
 
   /*
-   * Call H5Oopen_by_address function.
+   * Call H5Oopen_by_token function.
    */
-  if((*obj_id = (hid_t_f)H5Oopen_by_addr((hid_t)*loc_id, (haddr_t)*addr)) < 0)
+  if((*obj_id = (hid_t_f)H5Oopen_by_token((hid_t)*loc_id, *token)) < 0)
     HGOTO_DONE(FAIL);
 
  done:
@@ -304,6 +293,7 @@ nh5oopen_by_addr_c (hid_t_f *loc_id, haddr_t_f *addr, hid_t_f *obj_id)
  *  name         - Name of group, relative to loc_id.
  *  namelen      - Name length.
  *  lapl_id      - Link access property list.
+ *  fields       - Flags specifying the fields to include in object_info.
  * OUTPUTS
  *  object_info  - Buffer in which to return object information.
  *
@@ -316,12 +306,12 @@ nh5oopen_by_addr_c (hid_t_f *loc_id, haddr_t_f *addr, hid_t_f *obj_id)
 */
 int_f
 h5oget_info_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id,
-			H5O_info_t_f *object_info)
+                       H5O_info_t_f *object_info, int_f *fields)
 /******/
 {
   char *c_name = NULL;          /* Buffer to hold C string */
   int_f ret_value = 0;          /* Return value */
-  H5O_info_t Oinfo;
+  H5O_info2_t Oinfo;
   
   /*
    * Convert FORTRAN name to C name
@@ -332,11 +322,11 @@ h5oget_info_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *l
   /*
    * Call H5Oinfo_by_name function.
    */
-  if(H5Oget_info_by_name((hid_t)*loc_id, c_name,
-			 &Oinfo, (hid_t)*lapl_id) < 0)
+  if(H5Oget_info_by_name3((hid_t)*loc_id, c_name,
+                          &Oinfo, (unsigned)*fields, (hid_t)*lapl_id) < 0)
     HGOTO_DONE(FAIL);
 
-  ret_value = fill_h5o_info_t_f(Oinfo,object_info);
+  ret_value = fill_h5o_info_t_f(Oinfo, object_info);
 
  done:
   if(c_name)
@@ -356,6 +346,7 @@ h5oget_info_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *l
  *  lapl_id      - Link access property list.
  * OUTPUTS
  *  object_info  - Buffer in which to return object information.
+ *  fields       - Flags specifying the fields to include in object_info.
  *
  * RETURNS
  *  0 on success, -1 on failure
@@ -366,15 +357,15 @@ h5oget_info_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *l
 */
 int_f
 h5oget_info_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *namelen, 
-		       int_f *index_field, int_f *order, hsize_t_f *n, hid_t_f *lapl_id, H5O_info_t_f *object_info)
+                      int_f *index_field, int_f *order, hsize_t_f *n, hid_t_f *lapl_id, H5O_info_t_f *object_info, int_f *fields)
 /******/
 {
   char *c_group_name = NULL;     /* Buffer to hold C string */
   int_f ret_value = 0;          /* Return value */
-  H5O_info_t Oinfo;
+  H5O_info2_t Oinfo;
   H5_index_t c_index_field;
   H5_iter_order_t c_order;
-  
+
   /*
    * Convert FORTRAN name to C name
    */
@@ -387,8 +378,8 @@ h5oget_info_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *namelen,
   /*
    * Call H5Oinfo_by_idx function.
    */
-  if(H5Oget_info_by_idx((hid_t)*loc_id, c_group_name, c_index_field, c_order, (hsize_t)*n,
-			 &Oinfo, (hid_t)*lapl_id) < 0)
+  if(H5Oget_info_by_idx3((hid_t)*loc_id, c_group_name, c_index_field, c_order, (hsize_t)*n,
+                         &Oinfo, (unsigned)*fields, (hid_t)*lapl_id) < 0)
     HGOTO_DONE(FAIL);
 
   ret_value = fill_h5o_info_t_f(Oinfo,object_info);
@@ -406,6 +397,7 @@ h5oget_info_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *namelen,
  *  Calls H5Oget_info
  * INPUTS
  *  object_id   - Identifier for target object.
+ *  fields      - Flags specifying the fields to include in object_info.
  * OUTPUTS
  *  object_info - Buffer in which to return object information.
  *
@@ -417,16 +409,16 @@ h5oget_info_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *namelen,
  * SOURCE
 */
 int_f
-h5oget_info_c (hid_t_f *object_id, H5O_info_t_f *object_info)
+h5oget_info_c (hid_t_f *object_id, H5O_info_t_f *object_info, int_f *fields)
 /******/
 {
   int_f ret_value = 0;          /* Return value */
-  H5O_info_t Oinfo;
-  
+  H5O_info2_t Oinfo;
+
   /*
    * Call H5Oinfo_by_name function.
    */
-  if(H5Oget_info((hid_t)*object_id, &Oinfo) < 0)
+  if(H5Oget_info3((hid_t)*object_id, &Oinfo, (unsigned)*fields) < 0)
     HGOTO_DONE(FAIL);
 
   ret_value = fill_h5o_info_t_f(Oinfo,object_info);
@@ -458,9 +450,9 @@ h5oget_info_c (hid_t_f *object_id, H5O_info_t_f *object_info)
  * SOURCE
 */
 int_f
-nh5ocopy_c (hid_t_f *src_loc_id, _fcd src_name, size_t_f *src_name_len,
-	    hid_t_f *dst_loc_id, _fcd dst_name, size_t_f *dst_name_len, 
-	    hid_t_f *ocpypl_id, hid_t_f *lcpl_id )
+h5ocopy_c (hid_t_f *src_loc_id, _fcd src_name, size_t_f *src_name_len,
+           hid_t_f *dst_loc_id, _fcd dst_name, size_t_f *dst_name_len, 
+           hid_t_f *ocpypl_id, hid_t_f *lcpl_id )
 /******/
 {
   char *c_src_name = NULL;  /* Buffer to hold C string */
@@ -480,7 +472,7 @@ nh5ocopy_c (hid_t_f *src_loc_id, _fcd src_name, size_t_f *src_name_len,
    * Call H5Ocopy function.
    */
   if(H5Ocopy( (hid_t)*src_loc_id, c_src_name, (hid_t)*dst_loc_id, c_dst_name, 
-	      (hid_t)*ocpypl_id, (hid_t)*lcpl_id) < 0)
+              (hid_t)*ocpypl_id, (hid_t)*lcpl_id) < 0)
     HGOTO_DONE(FAIL);
 
  done:
@@ -499,15 +491,16 @@ nh5ocopy_c (hid_t_f *src_loc_id, _fcd src_name, size_t_f *src_name_len,
  * PURPOSE
  *  Calls H5Ovisit_by_name
  * INPUTS
- *    object_id - Identifier specifying subject group
- *   index_type - Type of index which determines the order
- *        order - Order within index
- *          idx - Iteration position at which to start
- *           op - Callback function passing data regarding the link to the calling application
- *      op_data - User-defined pointer to data required by the application for its processing of the link
+ *  object_id - Identifier specifying subject group
+ *  index_type - Type of index which determines the order
+ *  order - Order within index
+ *  idx - Iteration position at which to start
+ *  op - Callback function passing data regarding the link to the calling application
+ *  op_data - User-defined pointer to data required by the application for its processing of the link
+ *  fields - Flags specifying the fields to include in object_info.
  *
  * OUTPUTS
- *          idx - Position at which an interrupted iteration may be restarted
+ *  idx - Position at which an interrupted iteration may be restarted
  *
  * RETURNS
  *  >0 on success, 0< on failure
@@ -518,7 +511,7 @@ nh5ocopy_c (hid_t_f *src_loc_id, _fcd src_name, size_t_f *src_name_len,
 */
 int_f
 h5ovisit_by_name_c(hid_t_f *loc_id,  _fcd object_name, size_t_f *namelen, int_f *index_type, int_f *order,
-		    H5O_iterate_t op, void *op_data, hid_t_f *lapl_id )
+                   H5O_iterate2_t op, void *op_data, hid_t_f *lapl_id, int_f *fields )
 /******/
 {
   int_f ret_value = -1;       /* Return value */
@@ -532,10 +525,10 @@ h5ovisit_by_name_c(hid_t_f *loc_id,  _fcd object_name, size_t_f *namelen, int_f 
     HGOTO_DONE(FAIL);
 
   /*
-   * Call H5Ovisit
+   * Call H5Ovisit_by_name
    */
-  func_ret_value = H5Ovisit_by_name( (hid_t)*loc_id, c_object_name, (H5_index_t)*index_type, (H5_iter_order_t)*order,
-				     op, op_data, (hid_t)*lapl_id);
+  func_ret_value = H5Ovisit_by_name3( (hid_t)*loc_id, c_object_name, (H5_index_t)*index_type, (H5_iter_order_t)*order,
+                                      op, op_data, (unsigned)*fields, (hid_t)*lapl_id);
   ret_value = (int_f)func_ret_value;
 
  done:
@@ -560,7 +553,7 @@ h5ovisit_by_name_c(hid_t_f *loc_id,  _fcd object_name, size_t_f *namelen, int_f 
  * SOURCE
 */
 int_f
-nh5odecr_refcount_c (hid_t_f *object_id)
+h5odecr_refcount_c (hid_t_f *object_id)
 /******/
 {
   int_f ret_value = 0;  /* Return value */
@@ -594,7 +587,7 @@ nh5odecr_refcount_c (hid_t_f *object_id)
  * SOURCE
 */
 int_f
-nh5oexists_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id)
+h5oexists_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *lapl_id)
 /******/
 {
   char *c_name = NULL;          /* Buffer to hold C string */
@@ -633,7 +626,7 @@ nh5oexists_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *namelen, hid_t_f *la
  * SOURCE
 */
 int_f
-nh5oincr_refcount_c (hid_t_f *object_id)
+h5oincr_refcount_c (hid_t_f *object_id)
 /******/
 {
   int_f ret_value = 0;  /* Return value */
@@ -665,7 +658,7 @@ nh5oincr_refcount_c (hid_t_f *object_id)
  * SOURCE
 */
 int_f
-nh5oset_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentlen)
+h5oset_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentlen)
 /******/
 {
   char *c_comment = NULL;   /* Buffer to hold C string */
@@ -697,7 +690,7 @@ nh5oset_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentlen)
  * INPUTS
  *  object_id  - Identifier of the target object.
  *  name       - Name of the object whose comment is to be set or reset, 
- *               specified as a path relative to loc_id. 
+ *  specified as a path relative to loc_id. 
  *  namelen    - Length of the name.
  *  comment    - The new comment.
  *  commentlen - Length of the comment.
@@ -710,7 +703,7 @@ nh5oset_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentlen)
  * SOURCE
 */
 int_f
-nh5oset_comment_by_name_c (hid_t_f *object_id, _fcd name, size_t_f *namelen,  _fcd comment, size_t_f *commentlen, hid_t_f *lapl_id)
+h5oset_comment_by_name_c (hid_t_f *object_id, _fcd name, size_t_f *namelen,  _fcd comment, size_t_f *commentlen, hid_t_f *lapl_id)
 /******/
 {
   char *c_comment = NULL;   /* Buffer to hold C string */
@@ -755,7 +748,7 @@ nh5oset_comment_by_name_c (hid_t_f *object_id, _fcd name, size_t_f *namelen,  _f
  *  n             - Object to open.
  *  lapl_id       - Link access property list.
  * OUTPUTS
- *   obj_id       - An object identifier for the opened object.
+ *  obj_id       - An object identifier for the opened object.
  * RETURNS
  *  0 on success, -1 on failure
  * AUTHOR
@@ -764,8 +757,8 @@ nh5oset_comment_by_name_c (hid_t_f *object_id, _fcd name, size_t_f *namelen,  _f
  * SOURCE
 */
 int_f
-nh5oopen_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *group_namelen, 
-		       int_f *index_type, int_f *order, hsize_t_f *n, hid_t_f *obj_id, hid_t_f *lapl_id)
+h5oopen_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *group_namelen, 
+                  int_f *index_type, int_f *order, hsize_t_f *n, hid_t_f *obj_id, hid_t_f *lapl_id)
 /******/
 {
   char *c_group_name = NULL;     /* Buffer to hold C string */
@@ -813,7 +806,7 @@ nh5oopen_by_idx_c (hid_t_f *loc_id, _fcd  group_name, size_t_f *group_namelen,
  * SOURCE
 */
 int_f
-nh5oget_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentsize,  hssize_t_f *bufsize)
+h5oget_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentsize,  hssize_t_f *bufsize)
 /******/
 {
   char *c_comment = NULL;  /* Buffer to hold C string */
@@ -869,8 +862,8 @@ nh5oget_comment_c (hid_t_f *object_id, _fcd comment, size_t_f *commentsize,  hss
  * SOURCE
 */
 int_f
-nh5oget_comment_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *name_size, 
-			   _fcd comment, size_t_f *commentsize, size_t_f *bufsize, hid_t_f *lapl_id)
+h5oget_comment_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *name_size, 
+                          _fcd comment, size_t_f *commentsize, size_t_f *bufsize, hid_t_f *lapl_id)
 /******/
 {
   char *c_comment = NULL;  /* Buffer to hold C string */
@@ -901,13 +894,19 @@ nh5oget_comment_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *name_size,
   if((c_bufsize = H5Oget_comment_by_name((hid_t)*loc_id, c_name, c_comment, (size_t)*commentsize,(hid_t)*lapl_id )) < 0)
     HGOTO_DONE(FAIL);
 
+  if(c_name)
+    HDfree(c_name);
+
   *bufsize = (size_t_f)c_bufsize;
 
   /*
    * Convert C name to FORTRAN and place it in the given buffer
    */
-  if(c_comment)
+  if(c_comment) {
     HD5packFstring(c_comment, _fcdtocp(comment), c_commentsize - 1);
+    HDfree(c_comment);
+  }
+
   return ret_value;
 
  done:
@@ -918,3 +917,41 @@ nh5oget_comment_by_name_c (hid_t_f *loc_id, _fcd name, size_t_f *name_size,
 
   return ret_value;
 }
+
+/****if* H5Of/h5otoken_cmp_c
+ * NAME
+ *  h5otoken_cmp_c
+ * PURPOSE
+ *  Calls H5Otoken_cmp
+ * INPUTS
+ *  loc_id  - Identifier of an object in the file / container.
+ *  token1  - The first token to compare.
+ *  token2  - The second token to compare.
+ *  cmp_value - Whether the tokens are equal.
+ * RETURNS
+ *  0 on success, -1 on failure
+ * AUTHOR
+ *  Quincey Koziol
+ *  January 10, 2019
+ * SOURCE
+*/
+int_f
+h5otoken_cmp_c(hid_t_f *loc_id, H5O_token_t *token1, H5O_token_t *token2,
+    int_f *cmp_value_f)
+/******/
+{
+  int cmp_value;           /* Token comparison result */
+  int_f ret_value = 0;     /* Return value */
+
+  /* Call H5Otoken_cmp function */
+  cmp_value = 0;
+  if(H5Otoken_cmp((hid_t)*loc_id, token1, token2, &cmp_value) < 0)
+    HGOTO_DONE(FAIL);
+
+  /* Set the comparison value to return */
+  *cmp_value_f = cmp_value;
+
+done:
+  return ret_value;
+}
+

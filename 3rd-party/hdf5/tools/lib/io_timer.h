@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef IO_TIMER__
@@ -30,6 +28,7 @@
 #ifdef H5_HAVE_WINSOCK2_H
 #  include <winsock2.h>
 #endif /* H5_HAVE_WINSOCK2_H */
+
 /* The different types of timers we can have */
 typedef enum timer_type_ {
     HDF5_FILE_OPENCLOSE,
@@ -72,10 +71,19 @@ typedef struct io_time_t {
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cplusplus */
+
+#ifdef STANDALONE
+io_time_t   *io_time_new(clock_type t);
+void         io_time_destroy(io_time_t *pt);
+io_time_t   *io_time_set(io_time_t *pt, timer_type t, int start_stop);
+double       io_time_get(io_time_t *pt, timer_type t);
+#else
 H5TOOLS_DLL io_time_t   *io_time_new(clock_type t);
 H5TOOLS_DLL void         io_time_destroy(io_time_t *pt);
-H5TOOLS_DLL io_time_t   *set_time(io_time_t *pt, timer_type t, int start_stop);
-H5TOOLS_DLL double       get_time(io_time_t *pt, timer_type t);
+H5TOOLS_DLL io_time_t   *io_time_set(io_time_t *pt, timer_type t, int start_stop);
+H5TOOLS_DLL double       io_time_get(io_time_t *pt, timer_type t);
+#endif
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */

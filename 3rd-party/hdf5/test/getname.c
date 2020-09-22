@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -20,8 +18,8 @@
  * Purpose:     Tests the "ID to name" functionality
  */
 
-#define H5G_PACKAGE		/*suppress error about including H5Gpkg	  */
-#define H5I_PACKAGE		/*suppress error about including H5Ipkg	  */
+#define H5G_FRIEND		/*suppress error about including H5Gpkg	  */
+#define H5I_FRIEND		/*suppress error about including H5Ipkg	  */
 
 /* Define these macros to indicate that the testing APIs should be available */
 #define H5G_TESTING
@@ -103,8 +101,8 @@ test_main(hid_t file_id, hid_t fapl)
     hid_t   space_id;
     hid_t   type_id, type2_id;
     hsize_t dims[1] = { 5 };
-    size_t  name_len; /* Name length */ 
-    H5O_info_t oinfo;      /* Object info structs */
+    size_t  name_len; /* Name length */
+    H5O_info2_t oinfo;     /* Object info structs */
     hid_t      dtype;      /* Object identifier for testing */
     hid_t      dtype_anon; /* Object identifier for testing anonymous */
     ssize_t    size;       /* Size returned by H5Iget_name */
@@ -2382,7 +2380,7 @@ test_main(hid_t file_id, hid_t fapl)
     if((size = H5Iget_name(dtype, NULL, 0)) != 0) TEST_ERROR
 
     /* Create a link to the object */
-    if( H5Olink(dtype, file2_id, "datatype", H5P_DEFAULT, H5P_DEFAULT) < 0) TEST_ERROR
+    if(H5Olink(dtype, file2_id, "datatype", H5P_DEFAULT, H5P_DEFAULT) < 0) TEST_ERROR
 
     /* Commit a second datatype with no links to it and commit it */
     if((dtype_anon = H5Tcopy(H5T_NATIVE_INT)) < 0) TEST_ERROR
@@ -2392,7 +2390,7 @@ test_main(hid_t file_id, hid_t fapl)
     if((size = H5Iget_name(dtype_anon, NULL,0)) != 0) TEST_ERROR
 
     /* Store the address of the datatype for later use */
-    if(H5Oget_info(dtype_anon, &oinfo) < 0) TEST_ERROR
+    if(H5Oget_info3(dtype_anon, &oinfo, H5O_INFO_BASIC) < 0) TEST_ERROR
 
     /* Update the reference count to dtype_anon to preserve the datatype */
     if(H5Oincr_refcount(dtype_anon) < 0) TEST_ERROR
@@ -2402,22 +2400,22 @@ test_main(hid_t file_id, hid_t fapl)
     if(H5Fclose(file2_id) < 0) TEST_ERROR
 
     /* Re-open the file and check that the anonymous datatypes persist */
-    if( (file2_id = H5Fopen(filename2, H5F_ACC_RDONLY, fapl)) < 0) TEST_ERROR
+    if((file2_id = H5Fopen(filename2, H5F_ACC_RDONLY, fapl)) < 0) TEST_ERROR
 
     /* Check the H5Iget_name does not return an error for anon committed datatypes */
-    if((dtype_anon = H5Oopen_by_addr(file2_id, oinfo.addr)) < 0) TEST_ERROR
+    if((dtype_anon = H5Oopen_by_token(file2_id, oinfo.token)) < 0) TEST_ERROR
 
-    if((size = H5Iget_name(dtype_anon,NULL,0)) != 0) TEST_ERROR
+    if((size = H5Iget_name(dtype_anon, NULL, 0)) != 0) TEST_ERROR
 
     if(H5Tclose(dtype_anon) < 0) TEST_ERROR
     if(H5Fclose(file2_id) < 0) TEST_ERROR
 
     PASSED();
 
-    return(0);
+    return 0;
 
 error:
-    return(1);
+    return 1;
 }
 
 static int
@@ -2433,6 +2431,7 @@ test_obj_ref(hid_t fapl)
     hsize_t	dims1[] = {SPACE1_DIM1};
     hobj_ref_t  wbuf[SPACE1_DIM1];      /* Buffer to write to disk */
     int         tu32[SPACE1_DIM1];      /* Int data */
+    ssize_t     namelen;                /* Length of the name */
     int         i;                      /* counting variables */
     char buf[100];
 
@@ -2573,98 +2572,106 @@ test_obj_ref(hid_t fapl)
         FAIL_STACK_ERROR
 
     TESTING("getting path to normal dataset in root group");
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[0])) < 0) FAIL_STACK_ERROR
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[0])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Dataset3") == 0) &&(i == 9))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Dataset3") == 0) &&(namelen == 9))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[0], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Dataset3") == 0) &&(i == 9))) TEST_ERROR
+
+    /* Check H5Rget_name returns the correct length of the name when name is NULL */
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[0], NULL, 0);
+    if(namelen != 9) TEST_ERROR
+    /* Make sure size parameter is ignored */
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[0], NULL, 200);
+    if(namelen != 9) TEST_ERROR
+    
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[0], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Dataset3") == 0) &&(namelen == 9))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to dataset in /Group1");
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[1])) < 0) FAIL_STACK_ERROR
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[1])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1/Dataset2") == 0) &&(i == 16))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1/Dataset2") == 0) &&(namelen == 16))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[1], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1/Dataset2") == 0) &&(i == 16))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[1], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1/Dataset2") == 0) &&(namelen == 16))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to /Group1");
-    if((group = H5Rdereference(dataset, H5R_OBJECT, &wbuf[2])) < 0) FAIL_STACK_ERROR
+    if((group = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[2])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(group, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(group, (char*)buf, sizeof(buf));
     if(H5Gclose(group) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1") == 0) &&(i == 7))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1") == 0) &&(namelen == 7))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[2], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1") == 0) &&(i == 7))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[2], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1") == 0) &&(namelen == 7))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to datatype in /Group1");
-    if((tid1 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[3])) < 0) FAIL_STACK_ERROR
+    if((tid1 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[3])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(tid1, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(tid1, (char*)buf, sizeof(buf));
     if(H5Tclose(tid1) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1/Datatype1") == 0) &&(i == 17))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1/Datatype1") == 0) &&(namelen == 17))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[3], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1/Datatype1") == 0) &&(i == 17))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[3], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1/Datatype1") == 0) &&(namelen == 17))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to dataset in nested group");
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[4])) < 0) FAIL_STACK_ERROR
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[4])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1/Group2/Dataset4") == 0) &&(i == 23))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1/Group2/Dataset4") == 0) &&(namelen == 23))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[4], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1/Group2/Dataset4") == 0) &&(i == 23))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[4], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1/Group2/Dataset4") == 0) &&(namelen == 23))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to nested group");
-    if((group = H5Rdereference(dataset, H5R_OBJECT, &wbuf[5])) < 0) FAIL_STACK_ERROR
+    if((group = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[5])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(group, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(group, (char*)buf, sizeof(buf));
     if(H5Gclose(group) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1/Group2") == 0) &&(i == 14))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1/Group2") == 0) &&(namelen == 14))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[5], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1/Group2") == 0) &&(i == 14))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[5], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1/Group2") == 0) &&(namelen == 14))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to dataset created via hard link");
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[6])) < 0) FAIL_STACK_ERROR
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[6])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/Group1/Dataset5") == 0) &&(i == 16))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/Group1/Dataset5") == 0) &&(namelen == 16))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[6], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/Group1/Dataset5") == 0) &&(i == 16))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[6], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/Group1/Dataset5") == 0) &&(namelen == 16))) TEST_ERROR
     PASSED()
 
     HDmemset(buf, 0, sizeof(buf));
     TESTING("getting path to root group");
-    if((group = H5Rdereference(dataset, H5R_OBJECT, &wbuf[7])) < 0) FAIL_STACK_ERROR
+    if((group = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[7])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(group, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(group, (char*)buf, sizeof(buf));
     if(H5Gclose(group) < 0) FAIL_STACK_ERROR
-    if(!((HDstrcmp(buf, "/") == 0) &&(i == 1))) TEST_ERROR
+    if(!((HDstrcmp(buf, "/") == 0) &&(namelen == 1))) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[7], (char*)buf, sizeof(buf));
-    if(!((HDstrcmp(buf, "/") == 0) &&(i == 1))) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[7], (char*)buf, sizeof(buf));
+    if(!((HDstrcmp(buf, "/") == 0) &&(namelen == 1))) TEST_ERROR
     PASSED()
 
     /* Now we mount fid2 at /Group2 and look for dataset4.  It shouldn't be found */
@@ -2672,30 +2679,30 @@ test_obj_ref(hid_t fapl)
         FAIL_STACK_ERROR
 
     TESTING("getting path to dataset hidden by a mounted file");
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[4])) < 0) FAIL_STACK_ERROR
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[4])) < 0) FAIL_STACK_ERROR
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(i != 0) TEST_ERROR
+    if(namelen != 0) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[4], (char*)buf, sizeof(buf));
-    if(i != 0) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[4], (char*)buf, sizeof(buf));
+    if(namelen != 0) TEST_ERROR
     PASSED()
 
     /* Now we try unlinking dataset2 from the file and searching for it.  It shouldn't be found */
-    if((dataset2 = H5Rdereference(dataset, H5R_OBJECT, &wbuf[1])) < 0)
+    if((dataset2 = H5Rdereference2(dataset, H5P_DEFAULT, H5R_OBJECT, &wbuf[1])) < 0)
         FAIL_STACK_ERROR
     if(H5Ldelete(fid1, "/Group1/Dataset2", H5P_DEFAULT) < 0)
         FAIL_STACK_ERROR
 
     TESTING("getting path to dataset that has been unlinked");
     *buf = '\0';
-    i = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
+    namelen = H5Iget_name(dataset2, (char*)buf, sizeof(buf));
     if(H5Dclose(dataset2) < 0) FAIL_STACK_ERROR
-    if(i != 0) TEST_ERROR
+    if(namelen != 0) TEST_ERROR
     *buf = '\0';
-    i = H5Rget_name(dataset, H5R_OBJECT, &wbuf[1], (char*)buf, sizeof(buf));
-    if(i != 0) TEST_ERROR
+    namelen = H5Rget_name(dataset, H5R_OBJECT, &wbuf[1], (char*)buf, sizeof(buf));
+    if(namelen != 0) TEST_ERROR
     PASSED()
 
     /* Close disk dataspace */
@@ -2816,14 +2823,19 @@ test_reg_ref(hid_t fapl)
     /* Get name of the dataset the first region reference points to using H5Rget_name */
     TESTING("H5Rget_name to get name from region reference(hyperslab)");
     *buf1 = '\0';
-    name_size1 = H5Rget_name(dsetr_id, H5R_DATASET_REGION, &ref_out[0], (char*)buf1, NAME_BUF_SIZE);
+
+    /* Check H5Rget_name returns the correct length of the name when name is NULL */
+    name_size1 = H5Rget_name(dsetr_id, H5R_DATASET_REGION, &ref_out[0], NULL, 0);
+    if(name_size1 != 7) TEST_ERROR
+
+    name_size1 = H5Rget_name(dsetr_id, H5R_DATASET_REGION, &ref_out[0], (char*)buf1, NAME_BUF_SIZE );
     if(!((HDstrcmp(buf1, "/MATRIX") == 0) &&(name_size1 == 7))) TEST_ERROR
     PASSED()
 
     TESTING("H5Iget_name to get name from region reference(hyperslab)");
 
     /* Dereference the first reference */
-    dsetv_id = H5Rdereference(dsetr_id, H5R_DATASET_REGION, &ref_out[0]);
+    dsetv_id = H5Rdereference2(dsetr_id, H5P_DEFAULT, H5R_DATASET_REGION, &ref_out[0]);
 
     /* Get name of the dataset the first region reference points using H5Iget_name */
     *buf2 = '\0';
@@ -2844,7 +2856,7 @@ test_reg_ref(hid_t fapl)
     TESTING("H5Iget_name to get name from region reference(pnt selec)");
 
     /* Dereference the second reference */
-    if((dsetv_id = H5Rdereference(dsetr_id, H5R_DATASET_REGION, &ref_out[1])) < 0) TEST_ERROR
+    if((dsetv_id = H5Rdereference2(dsetr_id, H5P_DEFAULT, H5R_DATASET_REGION, &ref_out[1])) < 0) TEST_ERROR
 
     /* Get name of the dataset the first region reference points using H5Iget_name */
     *buf2 = '\0';
@@ -2925,7 +2937,7 @@ test_elinks(hid_t fapl)
     /* Query the external link object's name */
     *name = '\0';
     name_cached = FALSE;
-    namelen = H5I_get_name_test(group, (char*)name, sizeof(name), &name_cached);
+    namelen = H5I__get_name_test(group, (char*)name, sizeof(name), &name_cached);
     if(!((HDstrcmp(name, "/Group2") == 0) && (namelen == 7) && name_cached))
         TEST_ERROR
 
@@ -2940,7 +2952,7 @@ test_elinks(hid_t fapl)
     /* Query the external link to external link object's name */
     *name = '\0';
     name_cached = FALSE;
-    namelen = H5I_get_name_test(group, (char*)name, sizeof(name), &name_cached);
+    namelen = H5I__get_name_test(group, (char*)name, sizeof(name), &name_cached);
     if(!((HDstrcmp(name, "/Group2") == 0) && (namelen == 7) && name_cached))
         TEST_ERROR
 

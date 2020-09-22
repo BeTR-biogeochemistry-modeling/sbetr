@@ -5,7 +5,7 @@ module MockPlantSoilBGCType
 #include "bshr_assert.h"
   !USES
   use bshr_assert_mod, only : shr_assert
-  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
   use bshr_assert_mod, only : shr_assert_any
   use PlantSoilBGCMod , only : plant_soilbgc_type
   use betr_decompMod  , only : bounds_type => betr_bounds_type
@@ -98,7 +98,6 @@ module MockPlantSoilBGCType
 
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(dz)==(/bounds%endc,ubj/)), errMsg(mod_filename,__LINE__), betr_status)
-  if(betr_status%check_status())return
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning)                       continue

@@ -10,6 +10,7 @@ set(BETR_SHR_SOURCES
   shr_assert_mod.F90
   shr_log_mod.F90
   shr_timer_mod.F90
+  abortutils.F90
   )
 
 configure_file(shr_assert.h shr_assert.h COPYONLY)

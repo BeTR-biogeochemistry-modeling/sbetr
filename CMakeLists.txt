@@ -101,6 +101,9 @@ else()
   set (BETR_BGC 0)
 endif()
 
+if (SBETR)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DSBETR")
+endif()
 # Figure out the system type.
 set(BETR_HAVE_BOOL 1) # All reasonable C99 compilers have this now.
 if (APPLE EQUAL 1)
@@ -145,6 +148,43 @@ endif()
 
 set(BETR_NEED_PETSC 0)
 
+#if (XSDK_WITH_NETCDF AND MACHINE MATCHES "supported")
+
+  if ((TPL_NETCDF_LIBRARIES MATCHES "lib") AND (TPL_NETCDF_INCLUDE_DIRS MATCHES "include"))
+#    message(FATAL_ERROR "TPL_NETCDF_LIBRARIES option be set for netcdf support to be enabled.")
+#    message("TPL_NETCDF_LIBRARIES option be set for netcdf support to be enabled.")
+     message("BETR has netcdf support from the system")
+     message("TPL_NETCDF_LIBRARIES ${TPL_NETCDF_LIBRARIES}")
+     message("TPL_NETCDF_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS}")
+     list(APPEND BETR_TPLS ${TPL_NETCDF_LIBRARIES})
+     list(APPEND BETR_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS})
+     set(BETR_HAVE_NETCDF 1)
+  else()
+     message("BETR does not have netcdf support from the system")
+     set(BETR_HAVE_NETCDF 0)
+  endif()
+#X#  foreach(lib ${TPL_NETCDF_LIBRARIES})
+#X#    if (NOT EXISTS ${lib})
+#X#      message(FATAL_ERROR "netcdf library not found: ${lib}")
+#X#    endif()
+#X#  endforeach()
+
+#  if (NOT TPL_NETCDF_INCLUDE_DIRS)
+#    message(FATAL_ERROR "TPL_NETCDF_INCLUDE_DIRS option be set for netcdf support to be enabled.")
+#  endif()
+#X#  foreach(dir ${TPL_NETCDF_INCLUDE_DIRS})
+#X#    if (NOT EXISTS ${dir})
+#X#      message(FATAL_ERROR "netcdf include directory not found: ${dir}")
+#X#    endif()
+#X#  endforeach()
+
+#  message("-- Enabled support for netcdf.")
+#  list(APPEND BETR_TPLS ${TPL_NETCDF_LIBRARIES})
+#  list(APPEND BETR_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS})
+#  set(BETR_HAVE_NETCDF 1)
+#else()
+#  set(BETR_HAVE_NETCDF 0)
+#endif()
 # Other third-party libraries.
 add_subdirectory(3rd-party)
 

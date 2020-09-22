@@ -5,12 +5,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 !
 !
@@ -28,13 +26,13 @@ PROGRAM RWDSET_FORTRAN2003
         
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: int_kind_1 = SELECTED_INT_KIND(Fortran_INTEGER_1)  !should map to INTEGER*1 on most modern processors
-  INTEGER, PARAMETER :: int_kind_4 = SELECTED_INT_KIND(Fortran_INTEGER_2)  !should map to INTEGER*2 on most modern processors
-  INTEGER, PARAMETER :: int_kind_8 = SELECTED_INT_KIND(Fortran_INTEGER_4)  !should map to INTEGER*4 on most modern processors
-  INTEGER, PARAMETER :: int_kind_16 = SELECTED_INT_KIND(Fortran_INTEGER_8) !should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: int_kind_1 = SELECTED_INT_KIND(2)  !should map to INTEGER*1 on most modern processors
+  INTEGER, PARAMETER :: int_kind_4 = SELECTED_INT_KIND(4)  !should map to INTEGER*2 on most modern processors
+  INTEGER, PARAMETER :: int_kind_8 = SELECTED_INT_KIND(9)  !should map to INTEGER*4 on most modern processors
+  INTEGER, PARAMETER :: int_kind_16 = SELECTED_INT_KIND(18) !should map to INTEGER*8 on most modern processors
 
-  INTEGER, PARAMETER :: real_kind_7 = SELECTED_REAL_KIND(Fortran_REAL_4) !should map to REAL*4 on most modern processors
-  INTEGER, PARAMETER :: real_kind_15 = SELECTED_REAL_KIND(Fortran_REAL_8) !should map to REAL*8 on most modern processors
+  INTEGER, PARAMETER :: real_kind_7 = SELECTED_REAL_KIND(6,37) !should map to REAL*4 on most modern processors
+  INTEGER, PARAMETER :: real_kind_15 = SELECTED_REAL_KIND(15,307) !should map to REAL*8 on most modern processors
 
   CHARACTER(LEN=8), PARAMETER :: filename = "dsetf.h5" ! File name
   CHARACTER(LEN=5), PARAMETER :: dsetname1 = "dset1"     ! Dataset name
@@ -148,12 +146,12 @@ PROGRAM RWDSET_FORTRAN2003
   CALL h5dread_f(dset_idr8, h5kind_to_type(real_kind_15,H5_REAL_KIND), f_ptr,  error)
 
 ! memory type
-  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(Fortran_INTEGER_1):  ',data_out_i8a
-  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(Fortran_INTEGER_4):  ',data_out_i4
-  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(Fortran_INTEGER_8):  ',data_out_i8
-  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(Fortran_INTEGER_16): ',data_out_i16
-  WRITE(*,'(A,4(1x,f9.4))' )'SELECTED_REAL_KIND(Fortran_REAL_7):  ',data_out_r7
-  WRITE(*,'(A,4(1x,f16.10))' )'SELECTED_REAL_KIND(Fortran_REAL_15):  ',data_out_r15
+  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(2):  ',data_out_i8a
+  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(4):  ',data_out_i4
+  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(9):  ',data_out_i8
+  WRITE(*,'(A,4i8)' )'SELECTED_INT_KIND(18): ',data_out_i16
+  WRITE(*,'(A,4(1x,f9.4))' )'SELECTED_REAL_KIND(6,37):  ',data_out_r7
+  WRITE(*,'(A,4(1x,f16.10))' )'SELECTED_REAL_KIND(15,307):  ',data_out_r15
   !
   ! Close the dataset.
   !

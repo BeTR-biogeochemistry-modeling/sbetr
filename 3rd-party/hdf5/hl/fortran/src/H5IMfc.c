@@ -5,12 +5,10 @@
 *                                                                           *
 * This file is part of HDF5.  The full HDF5 copyright notice, including     *
 * terms governing use, modification, and redistribution, is contained in    *
-* the files COPYING and Copyright.html.  COPYING can be found at the root   *
-* of the source code distribution tree; Copyright.html can be found at the  *
-* root level of an installed copy of the electronic HDF5 document set and   *
-* is linked from the top-level documents page.  It can also be found at     *
-* http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-* access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* This files contains C stubs for H5D Fortran APIs */
@@ -39,7 +37,7 @@
 */
 
 int_f
-nh5immake_image_8bit_c (hid_t_f *loc_id,
+h5immake_image_8bit_c (hid_t_f *loc_id,
                         size_t_f *namelen,
                         _fcd name,
                         hsize_t_f *width,
@@ -73,7 +71,7 @@ nh5immake_image_8bit_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 
@@ -100,7 +98,7 @@ done:
 */
 
 int_f
-nh5imread_image_c (hid_t_f *loc_id,
+h5imread_image_c (hid_t_f *loc_id,
                    size_t_f *namelen,
                    _fcd name,
                    int_f *buf)
@@ -128,7 +126,7 @@ nh5imread_image_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -153,7 +151,7 @@ done:
 */
 
 int_f
-nh5immake_image_24bit_c (hid_t_f *loc_id,
+h5immake_image_24bit_c (hid_t_f *loc_id,
                          size_t_f *namelen,
                          _fcd name,
                          size_t_f *ilen,
@@ -195,9 +193,9 @@ nh5immake_image_24bit_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_il!=NULL)
-        free(c_il);
+        HDfree(c_il);
 
     return ret_value;
 }
@@ -222,7 +220,7 @@ done:
 */
 
 int_f
-nh5imget_image_info_c(hid_t_f *loc_id,
+h5imget_image_info_c(hid_t_f *loc_id,
                       size_t_f *namelen,
                       _fcd name,
                       hsize_t_f *width,
@@ -279,9 +277,9 @@ nh5imget_image_info_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_buf!=NULL)
-        free(c_buf);
+        HDfree(c_buf);
 
     return ret_value;
 }
@@ -307,7 +305,7 @@ done:
 */
 
 int_f
-nh5imis_image_c(hid_t_f *loc_id,
+h5imis_image_c(hid_t_f *loc_id,
                 size_t_f *namelen,
                 _fcd name)
 {
@@ -329,7 +327,7 @@ nh5imis_image_c(hid_t_f *loc_id,
     ret = H5IMis_image(c_loc_id, c_name);
 
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret;
 
@@ -356,7 +354,7 @@ nh5imis_image_c(hid_t_f *loc_id,
 */
 
 int_f
-nh5immake_palette_c (hid_t_f *loc_id,
+h5immake_palette_c (hid_t_f *loc_id,
                      size_t_f *namelen,
                      _fcd name,
                      hsize_t_f *dims,
@@ -411,7 +409,7 @@ done:
 */
 
 int_f
-nh5imlink_palette_c (hid_t_f *loc_id,
+h5imlink_palette_c (hid_t_f *loc_id,
                      size_t_f *namelen,
                      _fcd name,
                      size_t_f *ilen,
@@ -448,9 +446,9 @@ nh5imlink_palette_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_namepal!=NULL)
-        free(c_namepal);
+        HDfree(c_namepal);
 
     return ret_value;
 }
@@ -476,7 +474,7 @@ done:
 */
 
 int_f
-nh5imunlink_palette_c (hid_t_f *loc_id,
+h5imunlink_palette_c (hid_t_f *loc_id,
                        size_t_f *namelen,
                        _fcd name,
                        size_t_f *ilen,
@@ -513,9 +511,9 @@ nh5imunlink_palette_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_namepal!=NULL)
-        free(c_namepal);
+        HDfree(c_namepal);
 
     return ret_value;
 }
@@ -542,7 +540,7 @@ done:
 */
 
 int_f
-nh5imget_npalettes_c(hid_t_f *loc_id,
+h5imget_npalettes_c(hid_t_f *loc_id,
                      size_t_f *namelen,
                      _fcd name,
                      hsize_t_f *npals)
@@ -576,7 +574,7 @@ nh5imget_npalettes_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -604,7 +602,7 @@ done:
 
 
 int_f
-nh5imget_palette_info_c(hid_t_f *loc_id,
+h5imget_palette_info_c(hid_t_f *loc_id,
                         size_t_f *namelen,
                         _fcd name,
                         int_f *pal_number,
@@ -644,7 +642,7 @@ nh5imget_palette_info_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -671,7 +669,7 @@ done:
 
 
 int_f
-nh5imget_palette_c(hid_t_f *loc_id,
+h5imget_palette_c(hid_t_f *loc_id,
                    size_t_f *namelen,
                    _fcd name,
                    int_f *pal_number,
@@ -703,7 +701,7 @@ nh5imget_palette_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -729,7 +727,7 @@ done:
 */
 
 int_f
-nh5imis_palette_c(hid_t_f *loc_id,
+h5imis_palette_c(hid_t_f *loc_id,
                   size_t_f *namelen,
                   _fcd name)
 {
@@ -751,7 +749,7 @@ nh5imis_palette_c(hid_t_f *loc_id,
     ret = H5IMis_palette(c_loc_id, c_name);
 
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret;
 

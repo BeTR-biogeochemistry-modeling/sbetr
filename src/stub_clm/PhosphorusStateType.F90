@@ -6,31 +6,37 @@ module PhosphorusStateType
 implicit none
 
   type, public :: phosphorusstate_type
-    real(r8), pointer :: decomp_ppools_col            (:,:)  => null() ! col (gP/m2)  decomposing (litter, cwd, soil) P pools
-    real(r8), pointer :: sminp_col                    (:)   => null()  ! col (gP/m2) soil mineral P
-    real(r8), pointer :: solutionp_col                (:)  => null()       ! col (gP/m2) soil solution P
-    real(r8), pointer :: labilep_col                  (:)   => null()      ! col (gP/m2) soil labile mineral P
-    real(r8), pointer :: secondp_col                  (:)   => null()      ! col (gP/m2) soil secondary mineralP
-    real(r8), pointer :: occlp_col                    (:)  => null()       ! col (gP/m2) soil occluded mineral P
-    real(r8), pointer :: primp_col                    (:)  => null()       ! col (gP/m2) soil parimary mineral P
-    real(r8), pointer :: totlitp_col                  (:)  => null()   ! col (gP/m2) total litter phosphorus
-    real(r8), pointer :: totsomp_col                  (:) => null()    ! col (gP/m2) total soil organic matter phosphorus
-    real(r8), pointer :: totecosysp_col               (:) => null()    ! col (gP/m2) total ecosystem phosphorus, incl veg
-    real(r8), pointer :: totcolp_col                  (:) => null()    ! col (gP/m2) total column phosphorus, incl veg
-    real(r8), pointer :: cwdp_col                     (:) => null()    ! col (gP/m2) Diagnostic: coarse woody debris P
-    real(r8), pointer :: totlitp_1m_col               (:) => null()
-    real(r8), pointer :: totsomp_1m_col               (:) => null()
+    real(r8), pointer :: decomp_ppools            (:,:)  => null() ! col (gP/m2)  decomposing (litter, cwd, soil) P pools
+    real(r8), pointer :: sminp                    (:)   => null()  ! col (gP/m2) soil mineral P
+    real(r8), pointer :: solutionp                (:)  => null()       ! col (gP/m2) soil solution P
+    real(r8), pointer :: labilep                  (:)   => null()      ! col (gP/m2) soil labile mineral P
+    real(r8), pointer :: secondp                  (:)   => null()      ! col (gP/m2) soil secondary mineralP
+    real(r8), pointer :: occlp                    (:)  => null()       ! col (gP/m2) soil occluded mineral P
+    real(r8), pointer :: primp                    (:)  => null()       ! col (gP/m2) soil parimary mineral P
+    real(r8), pointer :: totlitp                  (:)  => null()   ! col (gP/m2) total litter phosphorus
+    real(r8), pointer :: totsomp                  (:) => null()    ! col (gP/m2) total soil organic matter phosphorus
+    real(r8), pointer :: totecosysp               (:) => null()    ! col (gP/m2) total ecosystem phosphorus, incl veg
+    real(r8), pointer :: totcolp                  (:) => null()    ! col (gP/m2) total column phosphorus, incl veg
+    real(r8), pointer :: cwdp                     (:) => null()    ! col (gP/m2) Diagnostic: coarse woody debris P
+    real(r8), pointer :: totlitp_1m               (:) => null()
+    real(r8), pointer :: totsomp_1m               (:) => null()
     ! patch averaged to column variables
-    real(r8), pointer :: totvegp_col                  (:)  => null()   ! col (gP/m2) total vegetation phosphorus (p2c)
+    real(r8), pointer :: totvegp                  (:)  => null()   ! col (gP/m2) total vegetation phosphorus (p2c)
 
-    real(r8), pointer :: decomp_ppools_vr_col         (:,:,:) => null()    ! col (gP/m3) vertically-resolved decomposing (litter, cwd, soil) P pools
-    real(r8), pointer :: solutionp_vr_col             (:,:)  => null()     ! col (gP/m3) vertically-resolved soil solution P
-    real(r8), pointer :: labilep_vr_col               (:,:) => null()      ! col (gP/m3) vertically-resolved soil labile mineral P
-    real(r8), pointer :: secondp_vr_col               (:,:)  => null()     ! col (gP/m3) vertically-resolved soil secondary mineralP
-    real(r8), pointer :: occlp_vr_col                 (:,:) => null()      ! col (gP/m3) vertically-resolved soil occluded mineral P
-    real(r8), pointer :: primp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil parimary mineral P
-    real(r8), pointer :: sminp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
-
+    real(r8), pointer :: decomp_ppools_vr         (:,:,:) => null()    ! col (gP/m3) vertically-resolved decomposing (litter, cwd, soil) P pools
+    real(r8), pointer :: solutionp_vr             (:,:)  => null()     ! col (gP/m3) vertically-resolved soil solution P
+    real(r8), pointer :: labilep_vr               (:,:) => null()      ! col (gP/m3) vertically-resolved soil labile mineral P
+    real(r8), pointer :: secondp_vr               (:,:)  => null()     ! col (gP/m3) vertically-resolved soil secondary mineralP
+    real(r8), pointer :: occlp_vr                 (:,:) => null()      ! col (gP/m3) vertically-resolved soil occluded mineral P
+    real(r8), pointer :: primp_vr                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil parimary mineral P
+    real(r8), pointer :: sminp_vr                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
+    real(r8), pointer :: som1p                    (:) => null()
+    real(r8), pointer :: som2p                    (:) => null()
+    real(r8), pointer :: som3p                    (:) => null()
+    real(r8), pointer :: domp                     (:) => null()
+    real(r8), pointer :: beg_totsoip              (:) => null()
+    real(r8), pointer :: totsoip                  (:) => null()
+    real(r8), pointer :: pmass_residual            (:) => null()
   contains
 
     procedure, public  :: Init
@@ -71,26 +77,40 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
     begp = bounds%begp; endp= bounds%endp
+    if(ndecomp_pools>0)then
+      allocate(this%decomp_ppools        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools        (:,:) = spval
+      allocate(this%decomp_ppools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr(:,:,:)= spval
+    endif
+    allocate(this%solutionp            (begc:endc))                   ; this%solutionp            (:)   = spval
+    allocate(this%solutionp            (begc:endc))                   ; this%solutionp            (:)   = spval
+    allocate(this%labilep              (begc:endc))                   ; this%labilep              (:)   = spval
+    allocate(this%secondp              (begc:endc))                   ; this%secondp              (:)   = spval
+    allocate(this%occlp                (begc:endc))                   ; this%occlp                (:)   = spval
+    allocate(this%primp                (begc:endc))                   ; this%primp                (:)   = spval
+    allocate(this%cwdp                 (begc:endc))                   ; this%cwdp                 (:)   = spval
+    allocate(this%sminp                (begc:endc))                   ; this%sminp                (:)   = spval
+    allocate(this%totecosysp           (begc:endc))                   ; this%totecosysp           (:)   = spval
+    allocate(this%totcolp              (begc:endc))                   ; this%totcolp              (:)   = spval
 
-    allocate(this%decomp_ppools_col        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools_col        (:,:) = nan
-    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = nan
-    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = nan
-    allocate(this%labilep_col              (begc:endc))                   ; this%labilep_col              (:)   = nan
-    allocate(this%secondp_col              (begc:endc))                   ; this%secondp_col              (:)   = nan
-    allocate(this%occlp_col                (begc:endc))                   ; this%occlp_col                (:)   = nan
-    allocate(this%primp_col                (begc:endc))                   ; this%primp_col                (:)   = nan
-    allocate(this%cwdp_col                 (begc:endc))                   ; this%cwdp_col                 (:)   = nan
-    allocate(this%sminp_col                (begc:endc))                   ; this%sminp_col                (:)   = nan
-    allocate(this%totecosysp_col           (begc:endc))                   ; this%totecosysp_col           (:)   = nan
-    allocate(this%totcolp_col              (begc:endc))                   ; this%totcolp_col              (:)   = nan
-
-    allocate(this%decomp_ppools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr_col(:,:,:)= nan
-    allocate(this%solutionp_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr_col         (:,:) = nan
-    allocate(this%labilep_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr_col           (:,:) = nan
-    allocate(this%secondp_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr_col           (:,:) = nan
-    allocate(this%occlp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr_col             (:,:) = nan
-    allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = nan
-    allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = nan
+    if(nlevdecomp_full>0)then
+      allocate(this%solutionp_vr         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr         (:,:) = spval
+      allocate(this%labilep_vr           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr           (:,:) = spval
+      allocate(this%secondp_vr           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr           (:,:) = spval
+      allocate(this%occlp_vr             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr             (:,:) = spval
+      allocate(this%primp_vr             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr             (:,:) = spval
+      allocate(this%sminp_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr             (:,:) = spval
+    endif
+    allocate(this%totlitp (begc:endc)); this%totlitp(:) = spval
+    allocate(this%totsomp(begc:endc)); this%totsomp(:) = spval
+    allocate(this%totlitp_1m(begc:endc)); this%totlitp_1m(:) = spval
+    allocate(this%totsomp_1m(begc:endc)); this%totsomp_1m(:) = spval
+    allocate(this%som1p(begc:endc)); this%som1p(:) = spval
+    allocate(this%som2p(begc:endc)); this%som2p(:) = spval
+    allocate(this%som3p(begc:endc)); this%som3p(:) = spval
+    allocate(this%domp(begc:endc)); this%domp(:) = spval
+    allocate(this%beg_totsoip(begc:endc)); this%beg_totsoip(:) = spval
+    allocate(this%totsoip(begc:endc)); this%totsoip(:) = spval
+    allocate(this%pmass_residual(begc:endc)); this%pmass_residual(:) = spval
 
   end subroutine InitAllocate
 
@@ -122,6 +142,11 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+
+
+    begc=bounds%begc; endc=bounds%endc
+
+    this%totsoip(begc:endc) = 0._r8
 
   end subroutine initCold
 

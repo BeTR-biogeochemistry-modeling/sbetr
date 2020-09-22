@@ -24,7 +24,7 @@ module bshr_string_mod
 ! !USES:
 #include "bshr_assert.h"
    use bshr_assert_mod, only : shr_assert
-   use bshr_assert_mod, only : shr_assert_all
+   use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
    use bshr_assert_mod, only : shr_assert_any
    use bshr_kind_mod, only : SHR_KIND_IN  ! F90 kinds
    use bshr_kind_mod, only : SHR_KIND_R8

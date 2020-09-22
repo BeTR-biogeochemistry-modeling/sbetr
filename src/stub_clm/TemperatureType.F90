@@ -7,7 +7,7 @@ module TemperatureType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-
+  use clm_varcon      , only : spval
   implicit none
   save
   private
@@ -16,9 +16,8 @@ module TemperatureType
 ! column energy state variables structure
 !----------------------------------------------------
   type, public :: temperature_type
-    real(r8), pointer :: t_soisno_col(:,:)   => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: t_soi10cm_col(:)     => null()    !soil temperature in top 10cm of soil (Kelvin)
-    real(r8), pointer :: t_veg_patch              (:) => null()  ! patch vegetation temperature (Kelvin)
+    real(r8), pointer :: t_soisno(:,:)   => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: t_soi10cm(:)     => null()    !soil temperature in top 10cm of soil (Kelvin)
   contains
      procedure, public  :: Init
      procedure, private :: InitAllocate
@@ -49,7 +48,6 @@ module TemperatureType
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
-    integer :: begp, endp
     integer :: begc, endc
     integer :: begg, endg
     integer :: lbj,  ubj
@@ -57,9 +55,7 @@ module TemperatureType
 
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
-    begp = bounds%begp; endp = bounds%endp
-    allocate(this%t_soisno_col(begc:endc, lbj:ubj));  this%t_soisno_col(:,:) = nan
-    allocate(this%t_soi10cm_col(begc:endc))           ;  this%t_soi10cm_col(:) = nan
-    allocate(this%t_veg_patch  (begp:endp))        ; this%t_veg_patch              (:)   = nan
+    allocate(this%t_soisno(begc:endc, lbj:ubj));  this%t_soisno(:,:) = spval
+    allocate(this%t_soi10cm(begc:endc))           ;  this%t_soi10cm(:) = spval
   end subroutine InitAllocate
 end module TemperatureType

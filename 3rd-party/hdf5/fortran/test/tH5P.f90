@@ -14,12 +14,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! CONTAINS SUBROUTINES
@@ -27,6 +25,9 @@
 !
 !*****
 MODULE TH5P
+  USE HDF5 ! This module contains all necessary modules 
+  USE TH5_MISC
+  USE TH5_MISC_GEN
 
 CONTAINS
 
@@ -36,8 +37,6 @@ SUBROUTINE external_test(cleanup, total_error)
 !   h5pset_external_f,  h5pget_external_count_f,
 !   h5pget_external_f
 
-  USE HDF5 ! This module contains all necessary modules
-  USE TH5_MISC
   
   IMPLICIT NONE
   LOGICAL, INTENT(IN)  :: cleanup
@@ -153,8 +152,6 @@ SUBROUTINE external_test(cleanup, total_error)
 END SUBROUTINE external_test
 
 SUBROUTINE multi_file_test(cleanup, total_error)
-  USE HDF5 ! This module contains all necessary modules
-  USE TH5_MISC
   
   IMPLICIT NONE
   LOGICAL, INTENT(IN) :: cleanup
@@ -421,10 +418,7 @@ END SUBROUTINE multi_file_test
 !                     April 16, 2009
 !-------------------------------------------------------------------------
 !
-SUBROUTINE test_chunk_cache(cleanup, total_error) 
-
-  USE HDF5 ! This module contains all necessary modules 
-  USE TH5_MISC
+SUBROUTINE test_chunk_cache(cleanup, total_error)
   
   IMPLICIT NONE
   LOGICAL, INTENT(IN)  :: cleanup
@@ -450,6 +444,7 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   INTEGER(size_t) rdcc_nelmts
   INTEGER(size_t) rdcc_nbytes
   REAL :: rdcc_w0
+  LOGICAL :: minimize              ! Flag for minimized headers
 
   CALL h5_fixname_f(filename, fix_filename, H5P_DEFAULT_F, error)
   IF (error .NE. 0) THEN
@@ -470,19 +465,16 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Pget_cache_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl1, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_1), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_1), INT(nbytes_4), total_error)
-
-  IF( .NOT.dreal_eq( REAL(w0_1,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", nslots_1, nslots_4, total_error)
+  CALL verify("H5Pget_chunk_cache_f", nbytes_1, nbytes_4, total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_1, w0_4, total_error)
 
   !  Set a lapl property on dapl1 (to verify inheritance) 
   CALL H5Pset_nlinks_f(dapl1, 134_size_t , error)
   CALL check("H5Pset_nlinks_f", error, total_error)
   CALL H5Pget_nlinks_f(dapl1, nlinks, error)
   CALL check("H5Pget_nlinks_f", error, total_error)
-  CALL VERIFY("H5Pget_nlinks_f", INT(nlinks), 134, total_error)
+  CALL verify("H5Pget_nlinks_f", INT(nlinks), 134, total_error)
 
 
   CALL h5pcreate_f(H5P_FILE_ACCESS_F, fapl_local, error)
@@ -529,11 +521,9 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Dget_access_plist_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_2,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_2, w0_4, total_error)
   CALL H5Pclose_f(dapl2,error) 
   CALL check("H5Pclose_f", error, total_error)
   
@@ -561,11 +551,9 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Dget_access_plist_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_3), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_3,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f4", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_3), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_3, w0_4, total_error)
   CALL H5Pclose_f(dapl2,error)
   CALL check("H5Pclose_f", error, total_error)
 
@@ -581,11 +569,9 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Dget_access_plist_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_2,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_2, w0_4, total_error)
   CALL H5Pclose_f(dapl2,error) 
   CALL check("H5Pclose_f", error, total_error)
 
@@ -601,11 +587,9 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
 
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_2,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_2, w0_4, total_error)
   ! Don't close dapl2, we will use it in the next section
 
   ! Modify cache values on fapl_local
@@ -638,11 +622,9 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Dget_access_plist_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_2,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_2), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_2, w0_4, total_error)
 
   ! Test H5D_CHUNK_CACHE_NSLOTS_DEFAULT and H5D_CHUNK_CACHE_W0_DEFAULT
   nslots_2 = H5D_CHUNK_CACHE_NSLOTS_DFLT_F
@@ -663,11 +645,60 @@ SUBROUTINE test_chunk_cache(cleanup, total_error)
   CALL check("H5Dget_access_plist_f", error, total_error)
   CALL H5Pget_chunk_cache_f(dapl2, nslots_4, nbytes_4, w0_4, error)
   CALL check("H5Pget_chunk_cache_f", error, total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nslots_3), INT(nslots_4), total_error)
-  CALL VERIFY("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
-  IF( .NOT.dreal_eq( REAL(w0_3,dp), REAL( w0_4, dp)) ) THEN
-     CALL VERIFYlogical("H5Pget_chunk_cache_f", .TRUE., .FALSE., total_error)
-  ENDIF
+  CALL verify("H5Pget_chunk_cache_f", INT(nslots_3), INT(nslots_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", INT(nbytes_2), INT(nbytes_4), total_error)
+  CALL verify("H5Pget_chunk_cache_f", w0_3, w0_4, total_error)
+
+  ! Check that the dataset object header minimization hint
+  ! can be set and retrieved.
+
+  ! H5P version
+  ! Check the default value
+  minimize = .TRUE.
+  CALL h5pget_dset_no_attrs_hint_f(dcpl, minimize, error)
+  CALL check("h5pget_dset_no_attrs_hint_f",error,total_error)
+  if(minimize .neqv. .FALSE.) then
+    total_error = total_error + 1
+    write(*,*) "Default dataset minimize flag was incorrect (H5P)"
+  endif
+
+  ! Check setter
+  minimize = .TRUE.
+  CALL h5pset_dset_no_attrs_hint_f(dcpl, minimize, error)
+  CALL check("h5pset_dset_no_attrs_hint_f",error,total_error)
+
+  ! Check getter
+  minimize = .FALSE.
+  CALL h5pget_dset_no_attrs_hint_f(dcpl, minimize, error)
+  CALL check("h5pget_dset_no_attrs_hint_f",error,total_error)
+  if(minimize .neqv. .TRUE.) then
+    total_error = total_error + 1
+    write(*,*) "Unable to get correct dataset minimize flag (H5P)"
+  endif
+
+  ! H5F version
+  ! Check the default value
+  minimize = .TRUE.
+  CALL h5fget_dset_no_attrs_hint_f(fid, minimize, error)
+  CALL check("h5fget_dset_no_attrs_hint_f",error,total_error)
+  if(minimize .neqv. .FALSE.) then
+    total_error = total_error + 1
+    write(*,*) "Default dataset minimize flag was incorrect (H5F)"
+  endif
+
+  ! Check setter
+  minimize = .TRUE.
+  CALL h5fset_dset_no_attrs_hint_f(fid, minimize, error)
+  CALL check("h5fset_dset_no_attrs_hint_f",error,total_error)
+
+  ! Check getter
+  minimize = .FALSE.
+  CALL h5fget_dset_no_attrs_hint_f(fid, minimize, error)
+  CALL check("h5fget_dset_no_attrs_hint_f",error,total_error)
+  if(minimize .neqv. .TRUE.) then
+    total_error = total_error + 1
+    write(*,*) "Unable to get correct dataset minimize flag (H5F)"
+  endif
 
 ! Close
 

@@ -9,7 +9,7 @@ module MockBGCReactionsType
   ! Created by Jinyun Tang, Oct 2nd, 2014
   ! !USES:
   use bshr_assert_mod, only : shr_assert
-  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
   use bshr_assert_mod, only : shr_assert_any
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use bshr_kind_mod            , only : r8 => shr_kind_r8
@@ -30,6 +30,8 @@ module MockBGCReactionsType
   type, extends(bgc_reaction_type) :: &
        bgc_reaction_mock_run_type
   private
+    integer, public :: parcol
+
   contains
      procedure :: Init_betrbgc                          ! initialize betr bgc
      procedure :: set_boundary_conditions               ! set top/bottom boundary conditions for various tracers
@@ -43,6 +45,11 @@ module MockBGCReactionsType
      procedure, private :: readParams                   ! read in parameters
      procedure :: retrieve_biostates
      procedure :: debug_info
+     procedure :: set_bgc_spinup
+     procedure :: UpdateParas
+     procedure :: init_iP_prof
+     procedure :: reset_biostates
+     procedure :: SetParCols
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
@@ -60,16 +67,57 @@ contains
     allocate(bgc)
     constructor = bgc
   end function constructor
-  !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
-  use PlantNutKineticsMod, only : PlantNutKinetics_type
 
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds, lbj, ubj, bstatus)
+  implicit none
+  class(bgc_reaction_mock_run_type)         , intent(inout)    :: this
+  type(bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
+  type(betr_status_type)               , intent(out)   :: bstatus
+  integer :: c, j
+
+  if (this%dummy_compiler_warning) continue
+  call bstatus%reset()
+  !do nothing
+  end subroutine UpdateParas
+
+  !----------------------------------------------------------------------
+  subroutine init_iP_prof(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+  !
+  !DESCRIPTION
+  ! set up initial inorganic P profile
+  use tracer_varcon, only : patomw
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType        , only : betrtracer_type
+  implicit none
   ! !ARGUMENTS:
-  class(bgc_reaction_mock_run_type)         , intent(inout)    :: this                       !
+  class(bgc_reaction_mock_run_type)         , intent(inout)    :: this
+  type(bounds_type)                        , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  type(BeTRtracer_type)                    , intent(inout) :: tracers
+  type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
+
+
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+
+  end subroutine init_iP_prof
+  !----------------------------------------------------------------------
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
+  use PlantNutKineticsMod, only : PlantNutKinetics_type
+  use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
+  ! !ARGUMENTS:
+  class(bgc_reaction_mock_run_type)         , intent(inout)    :: this
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type), intent(in) :: tracers
+  type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft
 
+  if (this%dummy_compiler_warning) continue
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
@@ -102,7 +150,26 @@ contains
     !X!tracerboundarycond_vars%botbc_type(:) = bndcond_as_flux
 
   end subroutine init_boundary_condition_type
+  !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, biophysforc, &
+  tracers, tracerstate_vars)
 
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType         , only : betrtracer_type
+  use BeTR_decompMod         , only : betr_bounds_type
+
+  implicit none
+    class(bgc_reaction_mock_run_type), intent(inout)    :: this
+    type(betr_bounds_type)                       , intent(in) :: bounds
+    integer                                 , intent(in) :: lbj, ubj
+    type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+    type(BeTRtracer_type)                   , intent(inout) :: tracers
+    type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
+
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+
+  end subroutine set_bgc_spinup
   !-------------------------------------------------------------------------------
   subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
     !
@@ -132,6 +199,7 @@ contains
     integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     call bstatus%reset()
+    this%parcol=1
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
     if (bounds%begc > 0)                       continue
@@ -221,8 +289,8 @@ contains
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, betr_time, &
+       betrtracer_vars, biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -235,6 +303,9 @@ contains
     use betr_varcon            , only : rgas => brgas
     use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type
     use BetrStatusType         , only : betr_status_type
+    use TracerCoeffType        , only : tracercoeff_type
+    use UnitConvertMod         , only : ppm2molv
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
@@ -242,47 +313,63 @@ contains
     integer                           , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                           , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars            !
+    integer                           , intent(in)    :: jtops(bounds%begc: )
     real(r8)                          , intent(in)    :: dz_top(bounds%begc: )      !
+    type(betr_time_type)              , intent(in)    :: betr_time
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)       , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)             , intent(in)   :: tracercoeff_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)            , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
-    integer            :: fc, c
+    integer            :: fc, c, kk
     character(len=255) :: subname = 'set_boundary_conditions'
     real(r8) :: irt   !the inverse of R*T
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
+
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)      continue
     if (size(biogeo_flux%qflx_adv_col)>0) continue
     associate(                                                             &
          forc_pbot            => biophysforc%forc_pbot_downscaled_col    , &
-         forc_tbot            => biophysforc%forc_t_downscaled_col       , &
-         groupid              => betrtracer_vars%groupid                   &
+         groupid              => betrtracer_vars%groupid                 , &
+         ngwmobile_tracers    => betrtracer_vars%ngwmobile_tracers       , &
+         is_volatile          => betrtracer_vars%is_volatile             , &
+         volatilegroupid      => betrtracer_vars%volatilegroupid         , &
+         snowres_col          => tracercoeff_vars%snowres_col            , &
+         condc_toplay_col     => tracerboundarycond_vars%condc_toplay_col, &
+         n2_ppmv              => biophysforc%n2_ppmv_col                 , &
+         o2_ppmv              => biophysforc%o2_ppmv_col                 , &
+         ar_ppmv              => biophysforc%ar_ppmv_col                 , &
+         co2_ppmv             => biophysforc%co2_ppmv_col                , &
+         ch4_ppmv             => biophysforc%ch4_ppmv_col                , &
+         n2o_ppmv             => biophysforc%n2o_ppmv_col                , &
+         nh3_ppmv             => biophysforc%nh3_ppmv_col                , &
+         pbot_pa              => biophysforc%forc_pbot_downscaled_col    , &
+         tair                 => biophysforc%forc_t_downscaled_col       , &
+         diffblkm_topsoi_col  => tracercoeff_vars%diffblkm_topsoi_col      &
          )
 
       do fc = 1, num_soilc
          c = filter_soilc(fc)
-         irt = 1.e3_r8/(forc_tbot(c)*rgas)
          !eventually, the following code will be implemented using polymorphism
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = forc_pbot(c)*0.78084_r8*irt  !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = forc_pbot(c)*0.20946_r8*irt  !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)   = forc_pbot(c)*0.009340_r8*irt !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x) = forc_pbot(c)*367e-6_r8*irt   !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)  = forc_pbot(c)*1.79e-6_r8*irt  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c)) !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)   = ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c)) !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x) = ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)  = ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                        !zero flux boundary condition for diffusion
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))           = 2._r8*1.713e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_co2x))         = 2._r8*1.399e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ch4))          = 2._r8*1.808e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                        !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                        !m/s surface conductance
+         do kk = 1, ngwmobile_tracers
+           if(.not. is_volatile(kk))cycle
+           condc_toplay_col(c,groupid(kk))    = 1._r8/(snowres_col(c,volatilegroupid(kk))+&
+             0.5_r8*dz_top(c)/diffblkm_topsoi_col(c,volatilegroupid(kk))) !m/s surface conductance
+         enddo
       enddo
 
     end associate
@@ -290,9 +377,9 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars,  biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
-       biogeo_flux,  betr_status)
+       biogeo_flux, biogeo_state, betr_status)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -308,6 +395,7 @@ contains
     use betr_columnType        , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     !ARGUMENTS
     class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
@@ -319,15 +407,16 @@ contains
     integer                           , intent(in)    :: filter_soilp(:)
     integer                           , intent(in)    :: jtops( : )                  ! top index of each column
     integer                           , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
-    real(r8)                          , intent(in)    :: dtime                       ! model time step
+    type(betr_time_type)              , intent(in)    :: betr_time                   ! model time step
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
-    type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
-    type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
+    type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
+    type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     class(plant_soilbgc_type)         , intent(inout) :: plant_soilbgc
     type(betr_biogeo_flux_type)       , intent(inout) :: biogeo_flux
+    type(betr_biogeo_state_type)      , intent(inout) :: biogeo_state
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
@@ -348,11 +437,11 @@ contains
     if (size(filter_soilc) > 0)                               continue
     if (num_soilp > 0)                                        continue
     if (size(filter_soilp) > 0)                               continue
-    if (dtime > 0.0)                                          continue
+    if (betr_time%delta_time > 0.0)                           continue
     if (len(betrtracer_vars%betr_simname) > 0)                continue
     if (size(biophysforc%isoilorder) > 0)                     continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
-    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+  !  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
+  !  if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0)    continue
     if (size(tracerboundarycond_vars%jtops_col) > 0)          continue
     if (plant_soilbgc%dummy_compiler_warning)                 continue
@@ -361,7 +450,8 @@ contains
     do ll = 1, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
+        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)* &
+          (exp(-1.e-6_r8*betr_time%delta_time)-1._r8)
         tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
       enddo
     enddo
@@ -399,7 +489,6 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
@@ -410,7 +499,7 @@ contains
     if (size(filter_soilc) > 0)                               continue
     if (len(betrtracer_vars%betr_simname) > 0)                continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
+  !  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
 
     !continue on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase
@@ -565,7 +654,7 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
+
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info
    !----------------------------------------------------------------------
@@ -592,11 +681,48 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue
 
    end subroutine retrieve_biostates
 
+
+
+   !----------------------------------------------------------------------
+   subroutine reset_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, biophysforc,  tracerstate_vars, betr_status)
+
+       ! !USES:
+       use bshr_kind_mod            , only : r8 => shr_kind_r8
+       use tracerstatetype          , only : tracerstate_type
+       use BeTR_decompMod           , only : betr_bounds_type
+       use BeTRTracerType           , only : BeTRTracer_Type
+       use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+       use BetrStatusType           , only : betr_status_type
+       use betr_columnType          , only : betr_column_type
+
+       ! !ARGUMENTS:
+     implicit none
+       class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+       type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+       integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+       integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+       integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+       integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+       type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+       type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+       type(betr_status_type)           , intent(out)   :: betr_status
+
+   end subroutine reset_biostates
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module MockBGCReactionsType

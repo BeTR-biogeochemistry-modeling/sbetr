@@ -4,6 +4,10 @@ module TracerParamSetWatIsoMod
   use bshr_assert_mod, only : shr_assert_all
   use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod            , only : r8 => shr_kind_r8
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
+  use bshr_assert_mod, only : shr_assert_any
+
  implicit none
   private
 

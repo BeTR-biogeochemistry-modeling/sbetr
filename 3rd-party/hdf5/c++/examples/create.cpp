@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -22,19 +20,16 @@
 #else
 #include <iostream>
 #endif
+
 #include <string>
-
 #include "H5Cpp.h"
+using namespace H5;
 
-#ifndef H5_NO_NAMESPACE
-    using namespace H5;
-#endif
-
-const H5std_string	FILE_NAME( "SDS.h5" );
-const H5std_string	DATASET_NAME( "IntArray" );
-const int 	NX = 5;                    // dataset dimensions
-const int 	NY = 6;
-const int 	RANK = 2;
+const H5std_string      FILE_NAME( "SDS.h5" );
+const H5std_string      DATASET_NAME( "IntArray" );
+const int       NX = 5;                    // dataset dimensions
+const int       NY = 6;
+const int       RANK = 2;
 
 int main (void)
 {
@@ -46,7 +41,7 @@ int main (void)
    for (j = 0; j < NX; j++)
    {
       for (i = 0; i < NY; i++)
-	 data[j][i] = i + j;
+         data[j][i] = i + j;
    }
    /*
     * 0 1 2 3 4 5
@@ -104,28 +99,28 @@ int main (void)
    // catch failure caused by the H5File operations
    catch( FileIException error )
    {
-      error.printError();
+      error.printErrorStack();
       return -1;
    }
 
    // catch failure caused by the DataSet operations
    catch( DataSetIException error )
    {
-      error.printError();
+      error.printErrorStack();
       return -1;
    }
 
    // catch failure caused by the DataSpace operations
    catch( DataSpaceIException error )
    {
-      error.printError();
+      error.printErrorStack();
       return -1;
    }
 
    // catch failure caused by the DataSpace operations
    catch( DataTypeIException error )
    {
-      error.printError();
+      error.printErrorStack();
       return -1;
    }
 

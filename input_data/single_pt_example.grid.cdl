@@ -1,0 +1,236 @@
+netcdf single_pt_example.grid {
+dimensions:
+	levgrnd = 15 ;
+	lndgrid = 1 ;
+variables:
+	float BSW(levgrnd, lndgrid) ;
+		BSW:long_name = "slope of soil water retention curve" ;
+		BSW:units = "unitless" ;
+		BSW:_FillValue = 1.e+36f ;
+		BSW:missing_value = 1.e+36f ;
+	float DZSOI(levgrnd, lndgrid) ;
+		DZSOI:long_name = "soil thickness" ;
+		DZSOI:units = "m" ;
+		DZSOI:_FillValue = 1.e+36f ;
+		DZSOI:missing_value = 1.e+36f ;
+	float SUCSAT(levgrnd, lndgrid) ;
+		SUCSAT:long_name = "saturated soil matric potential" ;
+		SUCSAT:units = "mm" ;
+		SUCSAT:_FillValue = 1.e+36f ;
+		SUCSAT:missing_value = 1.e+36f ;
+	float WATSAT(levgrnd, lndgrid) ;
+		WATSAT:long_name = "saturated soil water content (porosity)" ;
+		WATSAT:units = "mm3/mm3" ;
+		WATSAT:_FillValue = 1.e+36f ;
+		WATSAT:missing_value = 1.e+36f ;
+	float ZSOI(levgrnd, lndgrid) ;
+		ZSOI:long_name = "soil depth" ;
+		ZSOI:units = "m" ;
+		ZSOI:_FillValue = 1.e+36f ;
+		ZSOI:missing_value = 1.e+36f ;
+	float lat(lndgrid) ;
+		lat:long_name = "coordinate latitude" ;
+		lat:units = "degrees_north" ;
+		lat:_FillValue = 1.e+36f ;
+		lat:missing_value = 1.e+36f ;
+	float levgrnd(levgrnd) ;
+		levgrnd:long_name = "coordinate soil levels" ;
+		levgrnd:units = "m" ;
+	float lon(lndgrid) ;
+		lon:long_name = "coordinate longitude" ;
+		lon:units = "degrees_east" ;
+		lon:_FillValue = 1.e+36f ;
+		lon:missing_value = 1.e+36f ;
+  float PCTSAND(levgrnd, lndgrid) ;
+		PCTSAND:long_name = "soil sand content" ;
+		PCTSAND:units = "%" ;
+		PCTSAND:_FillValue = 1.e+36f ;
+		PCTSAND:missing_value = 1.e+36f ;
+  float PCTCLAY(levgrnd, lndgrid) ;
+		PCTCLAY:long_name = "soil clay content" ;
+		PCTCLAY:units = "%" ;
+		PCTCLAY:_FillValue = 1.e+36f ;
+		PCTCLAY:missing_value = 1.e+36f ;
+  float CELLORG(levgrnd, lndgrid) ;
+		CELLORG:long_name = "soil organic mass content" ;
+		CELLORG:units = "kg/m3" ;
+		CELLORG:_FillValue = 1.e+36f ;
+		CELLORG:missing_value = 1.e+36f ;
+	int lithological_class(lndgrid) ;
+		lithological_class: long_name="lithology class" ;
+		lithological_class: units ="unitless" ;
+		lithological_class: missing_value = -9999 ;
+// global attributes:
+		:title = "CLM History file information" ;
+		:comment = "NOTE: None of the variables are weighted by land fraction!" ;
+		:Conventions = "CF-1.0" ;
+		:history = "Sat Apr 21 22:01:00 2018: ncks -v BSW,SUCSAT,DZSOI,WATSAT,ZSOI,lat,levgrnd,lon single_pt_example.edison.clm2.h0.0001-01-01-00000.nc single_pt_example.grid.nc\n",
+			"created on 04/21/18 01:10:18" ;
+		:source = "Community Land Model CLM4.0" ;
+		:hostname = "edison" ;
+		:username = "jinyun" ;
+		:version = "unknown" ;
+		:revision_id = "$Id: histFileMod.F90 42903 2012-12-21 15:32:10Z muszala $" ;
+		:case_title = "UNSET" ;
+		:case_id = "single_pt_example.edison" ;
+		:Surface_dataset = "surfdata_ontario_mixwood_c180315.nc" ;
+		:Initial_conditions_dataset = "single_pt_example.edison.clm2.rst.0021-01-01-00000.nc" ;
+		:PFT_physiological_constants_dataset = "clm_params.c180322.nc" ;
+		:ltype_vegetated_or_bare_soil = 1 ;
+		:ltype_crop = 2 ;
+		:ltype_landice = 3 ;
+		:ltype_landice_multiple_elevation_classes = 4 ;
+		:ltype_deep_lake = 5 ;
+		:ltype_wetland = 6 ;
+		:ltype_urban_tbd = 7 ;
+		:ltype_urban_hd = 8 ;
+		:ltype_urban_md = 9 ;
+		:NCO = "4.6.6" ;
+data:
+
+ BSW =
+  3.19953,
+  3.904898,
+  4.39115,
+  4.527492,
+  4.40127,
+  4.550932,
+  4.529607,
+  4.670238,
+  4.659,
+  4.659,
+  4.659,
+  4.659,
+  4.659,
+  4.659,
+  4.659 ;
+
+ DZSOI =
+  0.01751282,
+  0.02757897,
+  0.04547003,
+  0.07496741,
+  0.1236004,
+  0.2037826,
+  0.3359806,
+  0.5539384,
+  0.91329,
+  1.505761,
+  2.48258,
+  4.093082,
+  6.748351,
+  11.12615,
+  13.85115 ;
+
+ SUCSAT =
+  38.8034,
+  82.13795,
+  107.9829,
+  113.0909,
+  107.4399,
+  102.6587,
+  88.7925,
+  103.4661,
+  103.6096,
+  103.6096,
+  103.6096,
+  103.6096,
+  103.6096,
+  103.6096,
+  103.6096 ;
+
+ WATSAT =
+  0.8034289,
+  0.6128645,
+  0.4999257,
+  0.445198,
+  0.4208856,
+  0.4104255,
+  0.4012393,
+  0.4064894,
+  0.40584,
+  0.40584,
+  0.40584,
+  0.40584,
+  0.40584,
+  0.40584,
+  0.40584 ;
+
+ ZSOI =
+  0.007100635,
+  0.027925,
+  0.06225858,
+  0.1188651,
+  0.2121934,
+  0.3660658,
+  0.6197585,
+  1.038027,
+  1.727635,
+  2.864607,
+  4.739157,
+  7.829766,
+  12.92532,
+  21.32647,
+  35.17762 ;
+
+ lat = 48.2167 ;
+
+ levgrnd = 0.007100635, 0.027925, 0.06225858, 0.1188651, 0.2121934,
+    0.3660658, 0.6197585, 1.038027, 1.727635, 2.864607, 4.739157, 7.829766,
+    12.92532, 21.32647, 35.17762 ;
+
+ lon = -82.1556 ;
+
+ PCTSAND =
+   59.0,
+   59.0,
+   59.0,
+   61.0,
+   64.0,
+   66.0,
+   71.0,
+   66.0,
+   66.0,
+   66.0,
+   66.0,
+   66.0,
+   66.0,
+   66.0,
+   66.0 ;
+
+ PCTCLAY =
+   9.0,
+   9.0,
+   10.0,
+   10.0,
+   9.0,
+   10.0,
+   10.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0 ;
+
+ CELLORG =
+   98.3420870438896,
+   50.5469995779064,
+   22.0417472868007,
+   8.69793693652468,
+   3.39800782858525,
+   1.32191249864847,
+   0.513191658544466,
+   0.199023126467103,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0 ;
+
+	lithological_class = 6 ;
+}

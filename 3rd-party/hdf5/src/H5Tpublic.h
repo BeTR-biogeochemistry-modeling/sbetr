@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -264,8 +262,9 @@ H5_DLLVAR hid_t H5T_IEEE_F64LE_g;
 #define H5T_STD_B32LE		(H5OPEN H5T_STD_B32LE_g)
 #define H5T_STD_B64BE		(H5OPEN H5T_STD_B64BE_g)
 #define H5T_STD_B64LE		(H5OPEN H5T_STD_B64LE_g)
-#define H5T_STD_REF_OBJ	        (H5OPEN H5T_STD_REF_OBJ_g)
+#define H5T_STD_REF_OBJ         (H5OPEN H5T_STD_REF_OBJ_g)
 #define H5T_STD_REF_DSETREG     (H5OPEN H5T_STD_REF_DSETREG_g)
+#define H5T_STD_REF             (H5OPEN H5T_STD_REF_g)
 H5_DLLVAR hid_t H5T_STD_I8BE_g;
 H5_DLLVAR hid_t H5T_STD_I8LE_g;
 H5_DLLVAR hid_t H5T_STD_I16BE_g;
@@ -292,6 +291,7 @@ H5_DLLVAR hid_t H5T_STD_B64BE_g;
 H5_DLLVAR hid_t H5T_STD_B64LE_g;
 H5_DLLVAR hid_t H5T_STD_REF_OBJ_g;
 H5_DLLVAR hid_t H5T_STD_REF_DSETREG_g;
+H5_DLLVAR hid_t H5T_STD_REF_g;
 
 /*
  * Types which are particular to Unix.
@@ -511,6 +511,8 @@ H5_DLL hid_t H5Tget_create_plist(hid_t type_id);
 H5_DLL htri_t H5Tcommitted(hid_t type_id);
 H5_DLL herr_t H5Tencode(hid_t obj_id, void *buf, size_t *nalloc);
 H5_DLL hid_t H5Tdecode(const void *buf);
+H5_DLL herr_t H5Tflush(hid_t type_id);
+H5_DLL herr_t H5Trefresh(hid_t type_id);
 
 /* Operations defined on compound datatypes */
 H5_DLL herr_t H5Tinsert(hid_t parent_id, const char *name, size_t offset,
@@ -591,6 +593,7 @@ H5_DLL H5T_conv_t H5Tfind(hid_t src_id, hid_t dst_id, H5T_cdata_t **pcdata);
 H5_DLL htri_t H5Tcompiler_conv(hid_t src_id, hid_t dst_id);
 H5_DLL herr_t H5Tconvert(hid_t src_id, hid_t dst_id, size_t nelmts,
 			  void *buf, void *background, hid_t plist_id);
+H5_DLL herr_t H5Treclaim(hid_t type_id, hid_t space_id, hid_t plist_id, void *buf);
 
 /* Symbols defined for compatibility with previous versions of the HDF5 API.
  *

@@ -5,31 +5,29 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /***********************************************************
 *
-* Test program:	 tgenprop
+* Test program:     tgenprop
 *
 * Test the Generic Property functionality
 *
 *************************************************************/
 
-#define H5P_PACKAGE		/*suppress error about including H5Ppkg	  */
+#define H5P_FRIEND        /*suppress error about including H5Ppkg      */
 
 /* Define this macro to indicate that the testing APIs should be available */
 #define H5P_TESTING
 
 #include "testhdf5.h"
-#include "hdf5.h"
+
 #include "H5Dprivate.h"         /* For Dataset creation property list names */
-#include "H5Ppkg.h"		/* Generic Properties			*/
+#include "H5Ppkg.h"        /* Generic Properties            */
 
 #define FILENAME   "tgenprop.h5"
 
@@ -61,6 +59,18 @@ double          prop4_def=1.41F;   /* Property 4 default value */
 #define PROP4_SIZE      sizeof(prop4_def)
 #define PROP4_DEF_VALUE (&prop4_def)
 
+/* Structs used during iteration */
+typedef struct iter_data_t {
+    int     iter_count;
+    char    **names;
+} iter_data_t;
+
+typedef struct count_data_t {
+    int     count;
+    hid_t   id;
+} count_data_t;
+
+
 /****************************************************************
 **
 **  test_genprop_basic_class(): Test basic generic property list code.
@@ -70,11 +80,11 @@ double          prop4_def=1.41F;   /* Property 4 default value */
 static void
 test_genprop_basic_class(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		cid2;		/* Generic Property class ID */
-    hid_t		cid3;		/* Generic Property class ID */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        cid2;        /* Generic Property class ID */
+    hid_t        cid3;        /* Generic Property class ID */
     char       *name;       /* Name of class */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Class Creation Functionality\n"));
@@ -159,10 +169,10 @@ test_genprop_basic_class(void)
 static void
 test_genprop_basic_class_prop(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    size_t		size;		/* Size of property */
-    size_t		nprops;		/* Number of properties in class */
-    herr_t		ret;		/* Generic return value	*/
+    hid_t        cid1;        /* Generic Property class ID */
+    size_t        size;        /* Size of property */
+    size_t        nprops;        /* Number of properties in class */
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Class Properties Functionality\n"));
@@ -284,17 +294,12 @@ test_genprop_basic_class_prop(void)
 **
 ****************************************************************/
 static int
-test_genprop_iter1(hid_t id, const char *name, void *iter_data)
+test_genprop_iter1(hid_t H5_ATTR_UNUSED id, const char *name,
+    void *iter_data)
 {
-    struct {                /* Struct for iterations */
-        int iter_count;
-        const char **names;
-    } *iter_struct = iter_data;
+    iter_data_t *idata = (iter_data_t *)iter_data;
 
-    /* Shut compiler up */
-    id = id;
-
-    return(HDstrcmp(name,iter_struct->names[iter_struct->iter_count++]));
+    return HDstrcmp(name,idata->names[idata->iter_count++]);
 }
 
 /****************************************************************
@@ -306,8 +311,8 @@ test_genprop_iter1(hid_t id, const char *name, void *iter_data)
 static void
 test_genprop_class_iter(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    size_t		nprops;		/* Number of properties in class */
+    hid_t        cid1;        /* Generic Property class ID */
+    size_t        nprops;        /* Number of properties in class */
     int         idx;        /* Index to start iteration at */
     struct {                /* Struct for iterations */
         int iter_count;
@@ -318,7 +323,7 @@ test_genprop_class_iter(void)
         PROP2_NAME,
         PROP3_NAME,
         PROP4_NAME};
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Class Property Iteration Functionality\n"));
@@ -373,43 +378,34 @@ test_genprop_class_iter(void)
 static herr_t
 test_genprop_cls_crt_cb1(hid_t list_id, void *create_data)
 {
-    struct {                /* Struct for iterations */
-        int count;
-        hid_t id;
-    } *count_struct=create_data;
+    count_data_t *cdata = (count_data_t *)create_data;
 
-    count_struct->count++;
-    count_struct->id=list_id;
+    cdata->count++;
+    cdata->id = list_id;
 
-    return(SUCCEED);
+    return SUCCEED;
 }
 
 static herr_t
 test_genprop_cls_cpy_cb1(hid_t new_list_id, hid_t H5_ATTR_UNUSED old_list_id, void *copy_data)
 {
-    struct {                /* Struct for iterations */
-        int count;
-        hid_t id;
-    } *count_struct=copy_data;
+    count_data_t *cdata = (count_data_t *)copy_data;
 
-    count_struct->count++;
-    count_struct->id=new_list_id;
+    cdata->count++;
+    cdata->id = new_list_id;
 
-    return(SUCCEED);
+    return SUCCEED;
 }
 
 static herr_t
 test_genprop_cls_cls_cb1(hid_t list_id, void *create_data)
 {
-    struct {                /* Struct for iterations */
-        int count;
-        hid_t id;
-    } *count_struct=create_data;
+    count_data_t *cdata = (count_data_t *)create_data;
 
-    count_struct->count++;
-    count_struct->id=list_id;
+    cdata->count++;
+    cdata->id = list_id;
 
-    return(SUCCEED);
+    return SUCCEED;
 }
 
 /****************************************************************
@@ -421,17 +417,17 @@ test_genprop_cls_cls_cb1(hid_t list_id, void *create_data)
 static void
 test_genprop_class_callback(void)
 {
-    hid_t	cid1;		/* Generic Property class ID */
-    hid_t	cid2;		/* Generic Property class ID */
-    hid_t	lid1;		/* Generic Property list ID */
-    hid_t	lid2;		/* Generic Property list ID */
-    hid_t	lid3;		/* Generic Property list ID */
-    size_t	nprops;		/* Number of properties in class */
+    hid_t    cid1;        /* Generic Property class ID */
+    hid_t    cid2;        /* Generic Property class ID */
+    hid_t    lid1;        /* Generic Property list ID */
+    hid_t    lid2;        /* Generic Property list ID */
+    hid_t    lid3;        /* Generic Property list ID */
+    size_t    nprops;        /* Number of properties in class */
     struct {                    /* Struct for callbacks */
         int count;
         hid_t id;
     } crt_cb_struct, cpy_cb_struct, cls_cb_struct;
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Class Callback Functionality\n"));
@@ -600,14 +596,14 @@ test_genprop_class_callback(void)
 static void
 test_genprop_basic_list(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		cid2;		/* Generic Property class ID */
-    hid_t		lid1;		/* Generic Property list ID */
-    size_t		nprops;		/* Number of properties */
-    size_t		size;		/* Size of property */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        cid2;        /* Generic Property class ID */
+    hid_t        lid1;        /* Generic Property list ID */
+    size_t        nprops;        /* Number of properties */
+    size_t        size;        /* Size of property */
     int                 prop1_value;    /* Value for property #1 */
     float               prop2_value;    /* Value for property #2 */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Creation Functionality\n"));
@@ -681,9 +677,9 @@ test_genprop_basic_list(void)
     ret = H5Pget(lid1, PROP2_NAME,&prop2_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP2_DEF_VALUE, prop2_value, (int)__LINE__, __FILE__);
+    if(!H5_FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", (double)*PROP2_DEF_VALUE, (double)prop2_value, (int)__LINE__, __FILE__);
 
 
     /* Close list */
@@ -706,14 +702,14 @@ test_genprop_basic_list(void)
 static void
 test_genprop_basic_list_prop(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		lid1;		/* Generic Property list ID */
-    size_t		nprops;		/* Number of properties */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        lid1;        /* Generic Property list ID */
+    size_t        nprops;        /* Number of properties */
     int                 prop1_value;    /* Value for property #1 */
     float               prop2_value;    /* Value for property #2 */
     char                prop3_value[10];/* Property #3 value */
     double              prop4_value;    /* Property #4 value */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Property Functionality\n"));
@@ -773,9 +769,9 @@ test_genprop_basic_list_prop(void)
     ret = H5Pget(lid1, PROP2_NAME,&prop2_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP2_DEF_VALUE, prop2_value, (int)__LINE__, __FILE__);
+    if(!H5_FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", (double)*PROP2_DEF_VALUE, (double)prop2_value, (int)__LINE__, __FILE__);
 
 
     /* Check values of temporary properties (set with regular values) */
@@ -786,9 +782,9 @@ test_genprop_basic_list_prop(void)
     ret = H5Pget(lid1, PROP4_NAME,&prop4_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop4_value,*PROP4_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
+    if(!H5_DBL_ABS_EQUAL(prop4_value, *PROP4_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
 
     /* Delete permanent property */
     ret = H5Premove(lid1, PROP2_NAME);
@@ -823,9 +819,9 @@ test_genprop_basic_list_prop(void)
     ret = H5Pget(lid1, PROP4_NAME,&prop4_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop4_value,*PROP4_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
+    if(!H5_DBL_ABS_EQUAL(prop4_value, *PROP4_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
 
     /* Close list */
     ret = H5Pclose(lid1);
@@ -843,17 +839,12 @@ test_genprop_basic_list_prop(void)
 **
 ****************************************************************/
 static int
-test_genprop_iter2(hid_t id, const char *name, void *iter_data)
+test_genprop_iter2(hid_t H5_ATTR_UNUSED id, const char *name,
+    void *iter_data)
 {
-    struct {                /* Struct for iterations */
-        int iter_count;
-        const char **names;
-    } *iter_struct=iter_data;
+    iter_data_t *idata = (iter_data_t *)iter_data;
 
-    /* Shut compiler up */
-    id=id;
-
-    return(HDstrcmp(name,iter_struct->names[iter_struct->iter_count++]));
+    return HDstrcmp(name,idata->names[idata->iter_count++]);
 }
 
 /****************************************************************
@@ -865,9 +856,9 @@ test_genprop_iter2(hid_t id, const char *name, void *iter_data)
 static void
 test_genprop_list_iter(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		lid1;		/* Generic Property list ID */
-    size_t		nprops;		/* Number of properties */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        lid1;        /* Generic Property list ID */
+    size_t        nprops;        /* Number of properties */
     int         idx;        /* Index to start iteration at */
     struct {                /* Struct for iterations */
         int iter_count;
@@ -879,7 +870,7 @@ test_genprop_list_iter(void)
         PROP1_NAME,
         PROP2_NAME
         };
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Generic Property List Iteration Functionality\n"));
@@ -995,15 +986,12 @@ prop_cb_info prop3_cb_info;     /* Callback statistics for property #3 */
 static herr_t
 test_genprop_cls_cpy_cb2(hid_t new_list_id, hid_t H5_ATTR_UNUSED old_list_id, void *create_data)
 {
-    struct {                /* Struct for iterations */
-        int count;
-        hid_t id;
-    } *count_struct=create_data;
+    count_data_t *cdata = (count_data_t *)create_data;
 
-    count_struct->count++;
-    count_struct->id=new_list_id;
+    cdata->count++;
+    cdata->id = new_list_id;
 
-    return(SUCCEED);
+    return SUCCEED;
 }
 
 /****************************************************************
@@ -1156,10 +1144,10 @@ test_genprop_prop_del_cb2(hid_t plist_id, const char *name, size_t size, void *v
 static void
 test_genprop_list_callback(void)
 {
-    hid_t	cid1;		/* Generic Property class ID */
-    hid_t	lid1;		/* Generic Property list ID */
-    hid_t	lid2;		/* 2nd Generic Property list ID */
-    size_t	nprops;		/* Number of properties in class */
+    hid_t    cid1;        /* Generic Property class ID */
+    hid_t    lid1;        /* Generic Property list ID */
+    hid_t    lid2;        /* 2nd Generic Property list ID */
+    size_t    nprops;        /* Number of properties in class */
     int         prop1_value;    /* Value for property #1 */
     int         prop1_new_value=20;   /* Property #1 new value */
     float       prop2_value;    /* Value for property #2 */
@@ -1170,7 +1158,7 @@ test_genprop_list_callback(void)
         int count;
         hid_t id;
     } cop_cb_struct;
-    herr_t	ret;		/* Generic return value	*/
+    herr_t    ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Property Callback Functionality\n"));
@@ -1213,9 +1201,9 @@ test_genprop_list_callback(void)
     lid1 = H5Pcreate(cid1);
     CHECK_I(lid1, "H5Pcreate");
 
-    /* The compare callback should have been called once on property 1 (to check
-     * if the create callback modified the value) */
-    VERIFY(prop1_cb_info.cmp_count, 1, "H5Pcreate");
+    /* The compare callback should not have been called once on property 1, as
+     *  the property is always copied */
+    VERIFY(prop1_cb_info.cmp_count, 0, "H5Pcreate");
     /* The compare callback should not have been called on property 3, as there
      * is no create callback */
     VERIFY(prop3_cb_info.cmp_count, 0, "H5Pcreate");
@@ -1231,15 +1219,14 @@ test_genprop_list_callback(void)
     ret = H5Pget(lid1, PROP1_NAME,&prop1_value);
     CHECK_I(ret, "H5Pget");
     VERIFY(prop1_value, *PROP1_DEF_VALUE, "H5Pget");
-    /* The compare callback should have been called once (to check if the get
-     * callback modified the value) */
-    VERIFY(prop1_cb_info.cmp_count, 2, "H5Pget");
+    /* The compare callback should not have been called */
+    VERIFY(prop1_cb_info.cmp_count, 0, "H5Pget");
     ret = H5Pget(lid1, PROP2_NAME,&prop2_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP2_DEF_VALUE, prop2_value, (int)__LINE__, __FILE__);
+    if(!H5_FLT_ABS_EQUAL(prop2_value,*PROP2_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", (double)*PROP2_DEF_VALUE, (double)prop2_value, (int)__LINE__, __FILE__);
 
     /* Check values of temporary properties (set with regular values) */
     ret = H5Pget(lid1, PROP3_NAME,&prop3_value);
@@ -1252,9 +1239,9 @@ test_genprop_list_callback(void)
     ret = H5Pget(lid1, PROP4_NAME,&prop4_value);
     CHECK_I(ret, "H5Pget");
     /* Verify the floating-poing value in this way to avoid compiler warning. */
-    if(!FLT_ABS_EQUAL(prop4_value,*PROP4_DEF_VALUE))
-	printf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
-	    "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
+    if(!H5_DBL_ABS_EQUAL(prop4_value, *PROP4_DEF_VALUE))
+    HDprintf("*** UNEXPECTED VALUE from %s should be %f, but is %f at line %4d in %s\n",
+        "H5Pget", *PROP4_DEF_VALUE, prop4_value, (int)__LINE__, __FILE__);
 
     /* Verify get callback information for properties tracked */
     VERIFY(prop1_cb_info.get_count, 1, "H5Pget");
@@ -1276,17 +1263,15 @@ test_genprop_list_callback(void)
     if(HDmemcmp(prop1_cb_info.set_value,&prop1_new_value, PROP1_SIZE)!=0)
         TestErrPrintf("Property #1 value doesn't match!, line=%d\n",__LINE__);
 
-    /* The compare callback should have been called once (to check if the new
-     * value needed to be copied onto the property list) */
-    VERIFY(prop1_cb_info.cmp_count, 3, "H5Pset");
+    /* The compare callback should not have been called  */
+    VERIFY(prop1_cb_info.cmp_count, 0, "H5Pset");
 
     /* Set value of property #3 to different value */
     ret = H5Pset(lid1, PROP3_NAME,prop3_new_value);
     CHECK_I(ret, "H5Pset");
 
-    /* The compare callback should have been called once (to check if the new
-     * value needed to be copied onto the property list) */
-    VERIFY(prop3_cb_info.cmp_count, 1, "H5Pset");
+    /* The compare callback should not have been called */
+    VERIFY(prop3_cb_info.cmp_count, 0, "H5Pset");
 
     /* Check new value of tracked properties */
     ret = H5Pget(lid1, PROP1_NAME,&prop1_value);
@@ -1333,8 +1318,8 @@ test_genprop_list_callback(void)
     VERIFY(ret, 1, "H5Pequal");
 
     /* Verify compare callback information for properties tracked */
-    VERIFY(prop1_cb_info.cmp_count, 4, "H5Pequal");
-    VERIFY(prop3_cb_info.cmp_count, 2, "H5Pequal");
+    VERIFY(prop1_cb_info.cmp_count, 1, "H5Pequal");
+    VERIFY(prop3_cb_info.cmp_count, 1, "H5Pequal");
 
     /* Close first list */
     ret = H5Pclose(lid1);
@@ -1388,7 +1373,7 @@ test_genprop_list_addprop(void)
     hid_t sid;          /* Dataspace ID */
     hid_t pid;          /* Property List ID */
     int   prop1_value;  /* Value for property #1 */
-    herr_t ret;		/* Generic return value	*/
+    herr_t ret;        /* Generic return value    */
 
     /* Create file */
     fid = H5Fcreate(FILENAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -1463,7 +1448,7 @@ test_genprop_class_addprop(void)
     hid_t cid;          /* Property Class ID */
     hid_t pid;          /* Property List ID */
     int   prop1_value;  /* Value for property #1 */
-    herr_t ret;		/* Generic return value	*/
+    herr_t ret;        /* Generic return value    */
 
     /* Create file */
     fid = H5Fcreate(FILENAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -1585,7 +1570,7 @@ static void
 test_genprop_list_add_remove_prop(void)
 {
     hid_t pid;          /* Property List ID */
-    herr_t ret;		/* Generic return value	*/
+    herr_t ret;        /* Generic return value    */
 
     /* Create a dataset creation property list */
     pid = H5Pcreate(H5P_DATASET_CREATE);
@@ -1622,11 +1607,11 @@ test_genprop_list_add_remove_prop(void)
 static void
 test_genprop_equal(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		lid1;		/* Generic Property list ID */
-    hid_t		lid2;		/* Generic Property list ID */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        lid1;        /* Generic Property list ID */
+    hid_t        lid2;        /* Generic Property list ID */
     int                 prop1_new_value = 20;   /* Property #1 new value */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Basic Generic Property List Equal Functionality\n"));
@@ -1771,11 +1756,11 @@ test_genprop_equal(void)
 static void
 test_genprop_path(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		cid2;		/* Generic Property class ID */
-    hid_t		cid3;		/* Generic Property class ID */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        cid2;        /* Generic Property class ID */
+    hid_t        cid3;        /* Generic Property class ID */
     char               *path;           /* Class path */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Generic Property List Class Path Functionality\n"));
@@ -1789,11 +1774,11 @@ test_genprop_path(void)
     CHECK_I(ret, "H5Pregister2");
 
     /* Get full path for first class */
-    path=H5P_get_class_path_test(cid1);
-    CHECK_PTR(path, "H5P_get_class_path_test");
+    path = H5P__get_class_path_test(cid1);
+    CHECK_PTR(path, "H5P__get_class_path_test");
     if(HDstrcmp(path,CLASS1_PATH)!=0)
         TestErrPrintf("Class names don't match!, path=%s, CLASS1_PATH=%s\n",path,CLASS1_PATH);
-    HDfree(path);
+    H5free_memory(path);
 
     /* Create another new generic class, derived from first class */
     cid2 = H5Pcreate_class(cid1,CLASS2_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -1804,21 +1789,21 @@ test_genprop_path(void)
     CHECK_I(ret, "H5Pregister2");
 
     /* Get full path for second class */
-    path=H5P_get_class_path_test(cid2);
-    CHECK_PTR(path, "H5P_get_class_path_test");
+    path = H5P__get_class_path_test(cid2);
+    CHECK_PTR(path, "H5P__get_class_path_test");
     if(HDstrcmp(path,CLASS2_PATH)!=0)
         TestErrPrintf("Class names don't match!, path=%s, CLASS2_PATH=%s\n",path,CLASS2_PATH);
 
     /* Open a copy of the class with the path name */
-    cid3 = H5P_open_class_path_test(path);
-    CHECK_I(cid3, "H5Popen_class_path");
+    cid3 = H5P__open_class_path_test(path);
+    CHECK_I(cid3, "H5P__open_class_path_test");
 
     /* Check that the classes are equal */
     ret = H5Pequal(cid2,cid3);
     VERIFY(ret, 1, "H5Pequal");
 
     /* Release the path string */
-    HDfree(path);
+    H5free_memory(path);
 
     /* Close class */
     ret = H5Pclose_class(cid3);
@@ -1843,10 +1828,10 @@ test_genprop_path(void)
 static void
 test_genprop_refcount(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    hid_t		lid1;		/* Generic Property class ID */
+    hid_t        cid1;        /* Generic Property class ID */
+    hid_t        lid1;        /* Generic Property class ID */
     char               *name;           /* Name of class */
-    herr_t		ret;		/* Generic return value	*/
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Generic Property List Reference Count Functionality\n"));
@@ -1916,10 +1901,10 @@ test_genprop_refcount(void)
 static void
 test_genprop_deprec_class(void)
 {
-    hid_t		cid1;		/* Generic Property class ID */
-    size_t		size;		/* Size of property */
-    size_t		nprops;		/* Number of properties in class */
-    herr_t		ret;		/* Generic return value	*/
+    hid_t        cid1;        /* Generic Property class ID */
+    size_t        size;        /* Size of property */
+    size_t        nprops;        /* Number of properties in class */
+    herr_t        ret;        /* Generic return value    */
 
     /* Output message about test being performed */
     MESSAGE(5, ("Testing Deprecated Generic Property List Functions\n"));
@@ -2049,7 +2034,7 @@ test_genprop_deprec_list(void)
     hid_t sid;          /* Dataspace ID */
     hid_t pid;          /* Property List ID */
     int   prop1_value;  /* Value for property #1 */
-    herr_t ret;		/* Generic return value	*/
+    herr_t ret;        /* Generic return value    */
 
     /* Create file */
     fid = H5Fcreate(FILENAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -2145,15 +2130,15 @@ test_genprop(void)
 
 }   /* test_genprop() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	cleanup_genprop
+ * Function:    cleanup_genprop
  *
- * Purpose:	Cleanup temporary test files
+ * Purpose:    Cleanup temporary test files
  *
- * Return:	none
+ * Return:    none
  *
- * Programmer:	Quincey Koziol
+ * Programmer:    Quincey Koziol
  *              June 8, 1999
  *
  * Modifications:

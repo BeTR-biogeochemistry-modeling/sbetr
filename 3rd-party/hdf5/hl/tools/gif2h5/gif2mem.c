@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -38,7 +36,7 @@
 #include "gif.h"
 
 int
-Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
+Gif2Mem(GIFBYTE *MemGif, GIFTOMEM *GifMemoryStruct)
 {
     /*
      * The gif structure outline for passing data to memory is given in gif.h.
@@ -51,22 +49,22 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
     GIFCOMMENT        **gifComment;        /* Comment Extension structure     */
     GIFGRAPHICCONTROL **gifGraphicControl; /* Graphic Control Extension strct */
 
-    register WORD i;        /* Loop counter                                 */
-    BYTE Identifier;        /* Extension block identifier holder            */
-    BYTE Label;             /* Extension block label holder                 */
-    BYTE ImageCount;        /* Count of the number of images in the file    */
-    BYTE ImageArray;        /* Keep the size of the array to store Images   */
-    BYTE CommentCount;
-    BYTE CommentArray;
-    BYTE ApplicationCount;
-    BYTE ApplicationArray;
-    BYTE PlainTextCount;
-    BYTE PlainTextArray;
-    BYTE GCEflag;
-    BYTE aTemp;
-    BYTE j;
-    BYTE w;                 /* Two more variables needed only while testing */
-    BYTE *b;                /* Endian Ordering                              */
+    register GIFWORD i;        /* Loop counter                                 */
+    GIFBYTE Identifier;        /* Extension block identifier holder            */
+    GIFBYTE Label;             /* Extension block label holder                 */
+    GIFBYTE ImageCount;        /* Count of the number of images in the file    */
+    GIFBYTE ImageArray;        /* Keep the size of the array to store Images   */
+    GIFBYTE CommentCount;
+    GIFBYTE CommentArray;
+    GIFBYTE ApplicationCount;
+    GIFBYTE ApplicationArray;
+    GIFBYTE PlainTextCount;
+    GIFBYTE PlainTextArray;
+    GIFBYTE GCEflag;
+    GIFBYTE aTemp;
+    GIFBYTE j;
+    GIFBYTE w;                 /* Two more variables needed only while testing */
+    GIFBYTE *b;                /* Endian Ordering                              */
 
     /* Allocate memory for the GIF structures           */
     /* Plug the structs into GifMemoryStruct at the end */
@@ -92,7 +90,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
 
     /* Carry out Endian Testing and set Endian Order */
     w = 0x0001;
-    b = (BYTE *) &w;
+    b = (GIFBYTE *) &w;
     EndianOrder = (b[0] ? 1 : 0);
 
     /* Read the GIF image file header information */
@@ -153,7 +151,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
 
                 if (ImageCount > ImageArray) {
                     aTemp = ImageArray;
-                    ImageArray = (BYTE)((ImageArray << 1) + 1);
+                    ImageArray = (GIFBYTE)((ImageArray << 1) + 1);
                     if (!(gifImageDesc = (GIFIMAGEDESC **)realloc(gifImageDesc,
                                             sizeof(GIFIMAGEDESC *) * ImageArray))) {
                         printf("Out of memory!");
@@ -220,7 +218,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
                         PlainTextCount++;
 
                         if (PlainTextCount > PlainTextArray)
-			  PlainTextArray = (BYTE)((PlainTextArray << 1) + 1);
+                            PlainTextArray = (GIFBYTE)((PlainTextArray << 1) + 1);
 
                         if (!(gifPlainText = (GIFPLAINTEXT **)realloc(gifPlainText , sizeof(GIFPLAINTEXT *) * PlainTextArray))) {
                             printf("Out of memory!");
@@ -242,7 +240,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
                         CommentCount++;
 
                         if (CommentCount > CommentArray)
-			  CommentArray = (BYTE)((CommentArray << 1) + 1);
+                            CommentArray = (GIFBYTE)((CommentArray << 1) + 1);
 
                         if (!(gifComment = (GIFCOMMENT **)realloc(gifComment , sizeof(GIFCOMMENT *) * CommentArray))) {
                             printf("Out of memory!");
@@ -269,7 +267,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
 
                         if (ImageCount > ImageArray) {
                             aTemp = ImageArray;
-                            ImageArray = (BYTE)((ImageArray << 1) + 1);
+                            ImageArray = (GIFBYTE)((ImageArray << 1) + 1);
 
                             if (!(gifGraphicControl = (GIFGRAPHICCONTROL **)realloc(gifGraphicControl , sizeof(GIFGRAPHICCONTROL *) * ImageArray))) {
                                 printf("Out of memory!");
@@ -297,7 +295,8 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
                             fprintf(stderr,
                                     "Error reading Graphic Control Extension information\n");
 
-                        if (!*MemGif++ == 0)
+                        (*MemGif)++;
+                        if ((!*MemGif) == 0)
                             fprintf(stderr,
                                     "Error reading Graphic Control Extension\n");
 
@@ -307,7 +306,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
                         ApplicationCount++;
 
                         if (ApplicationCount > ApplicationArray)
-			  ApplicationArray = (BYTE)((ApplicationArray << 1) + 1);
+                            ApplicationArray = (GIFBYTE)((ApplicationArray << 1) + 1);
 
                         if (!(gifApplication = (GIFAPPLICATION **)realloc(gifApplication , sizeof(GIFAPPLICATION *) * ApplicationArray))) {
                             printf("Out of memory!");
@@ -327,7 +326,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
                         break;
 
                     default:
-                        printf("Unknown Extension Label: 0x%02x\n", Label);
+                        printf("Unknown Extension Label: %#02x\n", Label);
                         break;
                     }
 
@@ -335,7 +334,7 @@ Gif2Mem(BYTE *MemGif, GIFTOMEM *GifMemoryStruct)
 
             default:
                 fprintf(stderr,
-                        "Unknown Block Separator Character: 0x%02x\n", Identifier);
+                        "Unknown Block Separator Character: %#02x\n", Identifier);
         }
     }
 }

@@ -34,21 +34,22 @@ module ColumnType
   !----------------------------------------------------
 
   type, public :: column_type
-    integer , pointer :: snl(:)            => null()    !number of snow layers
-    real(r8), pointer :: zi(:,:)       => null()        !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
-    real(r8), pointer :: dz(:,:)        => null()       !layer thickness (m)  (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: z(:,:)       => null()         !layer depth (m) (-nlevsno+1:nlevgrnd)
+    integer , pointer :: snl(:)                   => null()    !number of snow layers
+    real(r8), pointer :: zi(:,:)                  => null()    !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+    real(r8), pointer :: dz(:,:)                  => null()    !layer thickness (m)  (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: z(:,:)                   => null()    !layer depth (m) (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: lat                  (:) => null()
+    integer , pointer :: pfti                 (:) => null() ! beginning pft index for each column
+    integer , pointer :: pftf                 (:) => null() ! ending pft index for each column
+    real(r8), pointer :: wtgcell              (:) => null() ! weight (relative to gridcell)
+    integer , pointer :: gridcell             (:) => null() ! index into gridcell level quantities
 
-    integer , pointer :: pfti                 (:)  => null() ! beginning pft index for each column
-    integer , pointer :: pftf                 (:)  => null() ! ending pft index for each column
-    real(r8), pointer :: wtgcell              (:)  => null() ! weight (relative to gridcell)
-    integer , pointer :: gridcell             (:)  => null() ! index into gridcell level quantities
-
-     logical , pointer :: active               (:) => null()  ! true=>do computations on this column
-     integer , pointer :: landunit             (:) => null()  ! index into landunit level quantities
-     integer , pointer :: itype                (:) => null()  ! column type
-     real(r8), pointer :: wtlunit              (:) => null()  ! weight (relative to landunit)
-     integer , pointer :: npfts                (:)  => null() ! number of patches for each column
+    logical , pointer :: active               (:) => null()  ! true=>do computations on this column
+    integer , pointer :: landunit             (:) => null()  ! index into landunit level quantities
+    integer , pointer :: itype                (:) => null()  ! column type
+    real(r8), pointer :: wtlunit              (:) => null()  ! weight (relative to landunit)
+    integer , pointer :: npfts                (:)  => null() ! number of patches for each column
+    logical , pointer :: debug_flag           (:) => null()
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -95,5 +96,7 @@ module ColumnType
     allocate(this%npfts(begc:endc))
     allocate(this%pfti(begc:endc))
     allocate(this%pftf(begc:endc))
+    allocate(this%debug_flag(begc:endc))  ; this%debug_flag(:)=.false.
+    allocate(this%lat(begc:endc))
   end subroutine InitAllocate
 end module ColumnType

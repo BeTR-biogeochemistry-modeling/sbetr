@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -18,13 +16,13 @@
  *              Tuesday, November 24, 1998
  */
 
-#define H5G_PACKAGE		/*suppress error about including H5Gpkg	  */
+#define H5G_FRIEND        /*suppress error about including H5Gpkg      */
 
 /* Define this macro to indicate that the testing APIs should be available */
 #define H5G_TESTING
 
 #include "h5test.h"
-#include "H5Gpkg.h"		/* Groups				*/
+#include "H5Gpkg.h"        /* Groups                */
 
 const char *FILENAME[] = {
     "stab",
@@ -72,36 +70,38 @@ const char *FILENAME[] = {
 #define GCPL_ON_ROOT_MAX_COMPACT   4
 #define GCPL_ON_ROOT_MIN_DENSE     2
 
+#ifndef H5_NO_DEPRECATED_SYMBOLS
 /* Definitions for 'old_api' test */
 #define OLD_API_GROUP           "/old_api"
+#endif /* H5_NO_DEPRECATED_SYMBOLS */
 
 /* Definitions for 'corrupt_stab_msg' test */
 #define CORRUPT_STAB_FILE           "corrupt_stab_msg.h5"
 #define CORRUPT_STAB_TMP_FILE       "corrupt_stab_msg_tmp.h5"
 #define CORRUPT_STAB_DSET           "DS1"
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	test_misc
+ * Function:    test_misc
  *
- * Purpose:	Test miscellaneous group stuff.
+ * Purpose:    Test miscellaneous group stuff.
  *
- * Return:	Success:	0
+ * Return:    Success:    0
  *
- *		Failure:	number of errors
+ *        Failure:    number of errors
  *
- * Programmer:	Robb Matzke
+ * Programmer:    Robb Matzke
  *              Tuesday, November 24, 1998
  *
  *-------------------------------------------------------------------------
  */
 static int
-test_misc(hid_t fapl, hbool_t new_format)
+test_misc(hid_t fcpl, hid_t fapl, hbool_t new_format)
 {
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	g1 = (-1), g2 = (-1), g3 = (-1);
-    char	filename[NAME_BUF_SIZE];
-    char	comment[64];
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    g1 = (-1), g2 = (-1), g3 = (-1);
+    char    filename[NAME_BUF_SIZE];
+    char    comment[64];
 
     if(new_format)
         TESTING("miscellaneous group tests (w/new group format)")
@@ -110,7 +110,7 @@ test_misc(hid_t fapl, hbool_t new_format)
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0) TEST_ERROR
 
     /* Create initial groups for testing, then close */
     if((g1 = H5Gcreate2(fid, "test_1a", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
@@ -127,10 +127,10 @@ test_misc(hid_t fapl, hbool_t new_format)
     if((g3 = H5Gopen2(fid, "/test_1b", H5P_DEFAULT)) < 0) TEST_ERROR
     if(H5Oget_comment_by_name(g3, "././.", comment, sizeof comment, H5P_DEFAULT) < 0) TEST_ERROR
     if(HDstrcmp(comment, "hello world")) {
-	H5_FAILED();
-	puts("    Read the wrong comment string from the group.");
-	printf("    got: \"%s\"\n    ans: \"hello world\"\n", comment);
-	TEST_ERROR
+    H5_FAILED();
+    HDputs("    Read the wrong comment string from the group.");
+    HDprintf("    got: \"%s\"\n    ans: \"hello world\"\n", comment);
+    TEST_ERROR
     }
     if(H5Gclose(g1) < 0) TEST_ERROR
     if(H5Gclose(g2) < 0) TEST_ERROR
@@ -155,21 +155,21 @@ test_misc(hid_t fapl, hbool_t new_format)
 
  error:
     H5E_BEGIN_TRY {
-	H5Gclose(g1);
-	H5Gclose(g2);
-	H5Gclose(g3);
-    	H5Fclose(fid);
+    H5Gclose(g1);
+    H5Gclose(g2);
+    H5Gclose(g3);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 }
 
-
+
 /*-------------------------------------------------------------------------
  * Purpose:     Creates a group with a very long name
  *
- * Return:      Success:	0
+ * Return:      Success:    0
  *
- * 		Failure:	number of errors
+ *         Failure:    number of errors
  *
  * Programmer:  Robb Matzke <matzke@llnl.gov> 2002-03-28
  *
@@ -177,12 +177,12 @@ test_misc(hid_t fapl, hbool_t new_format)
  *-------------------------------------------------------------------------
  */
 static int
-test_long(hid_t fapl, hbool_t new_format)
+test_long(hid_t fcpl, hid_t fapl, hbool_t new_format)
 {
-    hid_t	fid = (-1);             /* File ID */
+    hid_t    fid = (-1);             /* File ID */
     hid_t       g1 = (-1), g2 = (-1);
     char        *name1 = NULL, *name2 = NULL;
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
     size_t      i;
 
     if(new_format)
@@ -192,7 +192,7 @@ test_long(hid_t fapl, hbool_t new_format)
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0) TEST_ERROR
 
     /* Group names */
     name1 = (char *)HDmalloc((size_t)LONG_NAME_LEN);
@@ -200,7 +200,7 @@ test_long(hid_t fapl, hbool_t new_format)
         name1[i] = (char)('A' + i%26);
     name1[LONG_NAME_LEN - 1] = '\0';
     name2 = (char *)HDmalloc((size_t)((2 * LONG_NAME_LEN) + 2));
-    sprintf(name2, "%s/%s", name1, name1);
+    HDsprintf(name2, "%s/%s", name1, name1);
 
     /* Create groups */
     if((g1 = H5Gcreate2(fid, name1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
@@ -228,22 +228,22 @@ error:
     H5E_BEGIN_TRY {
         H5Gclose(g1);
         H5Gclose(g2);
-    	H5Fclose(fid);
+        H5Fclose(fid);
         HDfree(name2);
         HDfree(name1);
     } H5E_END_TRY;
     return 1;
 } /* end test_long() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    test_large
  *
  * Purpose:     Creates a really large directory.
  *
- * Return:      Success:	0
+ * Return:      Success:    0
  *
- * 		Failure:	number of errors
+ *         Failure:    number of errors
  *
  * Programmer:  Robb Matzke
  *              robb@maya.nuance.com
@@ -252,11 +252,11 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-test_large(hid_t fapl, hbool_t new_format)
+test_large(hid_t fcpl, hid_t fapl, hbool_t new_format)
 {
-    hid_t	fid = (-1);             /* File ID */
+    hid_t    fid = (-1);             /* File ID */
     hid_t       cwg = (-1), dir = (-1); /* Group IDs */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
     char        name[NAME_BUF_SIZE];
     int         i;
 
@@ -267,7 +267,7 @@ test_large(hid_t fapl, hbool_t new_format)
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0) TEST_ERROR
 
     /*
      * Create a directory that has so many entries that the root
@@ -277,8 +277,8 @@ test_large(hid_t fapl, hbool_t new_format)
     if(new_format)
         if(H5G__has_stab_test(cwg) != FALSE) TEST_ERROR
     for(i = 0; i < LARGE_NOBJS; i++) {
-        sprintf(name, "%05d%05d", (HDrandom() % 100000), i);
-	if((dir = H5Gcreate2(cwg, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
+        HDsprintf(name, "%05d%05d", (HDrandom() % 100000), i);
+    if((dir = H5Gcreate2(cwg, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
         if(H5Gclose(dir) < 0) TEST_ERROR
     }
     if(new_format)
@@ -293,14 +293,14 @@ test_large(hid_t fapl, hbool_t new_format)
 
  error:
     H5E_BEGIN_TRY {
-	H5Gclose(dir);
-	H5Gclose(cwg);
-    	H5Fclose(fid);
+    H5Gclose(dir);
+    H5Gclose(cwg);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 } /* end test_large() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    lifecycle
  *
@@ -318,21 +318,21 @@ test_large(hid_t fapl, hbool_t new_format)
  *-------------------------------------------------------------------------
  */
 static int
-lifecycle(hid_t fapl2)
+lifecycle(hid_t fcpl, hid_t fapl2)
 {
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	gid = (-1);             /* Group ID */
-    hid_t	gid2 = (-1);            /* Datatype ID */
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    gid = (-1);             /* Group ID */
+    hid_t    gid2 = (-1);            /* Datatype ID */
     hid_t       gcpl = (-1);            /* Group creation property list ID */
     size_t      lheap_size_hint;        /* Local heap size hint */
     unsigned    max_compact;            /* Maximum # of links to store in group compactly */
     unsigned    min_dense;              /* Minimum # of links to store in group "densely" */
-    unsigned	est_num_entries;	/* Estimated # of entries in group */
-    unsigned	est_name_len;		/* Estimated length of entry name */
-    unsigned	nmsgs;		        /* Number of messages in group's header */
-    H5O_info_t  oinfo;                  /* Object info */
+    unsigned    est_num_entries;    /* Estimated # of entries in group */
+    unsigned    est_name_len;        /* Estimated length of entry name */
+    unsigned    nmsgs;                /* Number of messages in group's header */
+    H5O_native_info_t  ninfo;                  /* Object info */
     char        objname[NAME_BUF_SIZE];         /* Object name */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
     h5_stat_size_t       empty_size;             /* Size of an empty file */
     unsigned    u;                      /* Local index variable */
     h5_stat_size_t       file_size;              /* Size of each file created */
@@ -341,7 +341,7 @@ lifecycle(hid_t fapl2)
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl2, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl2)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl2)) < 0) TEST_ERROR
 
     /* Close file */
     if(H5Fclose(fid) < 0) TEST_ERROR
@@ -387,7 +387,7 @@ lifecycle(hid_t fapl2)
     if(H5G__is_empty_test(gid) != TRUE) TEST_ERROR
 
     /* Create first "bottom" group */
-    sprintf(objname, LIFECYCLE_BOTTOM_GROUP, (unsigned)0);
+    HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, (unsigned)0);
     if((gid2 = H5Gcreate2(gid, objname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
 
     /* Check on bottom group's status */
@@ -404,7 +404,7 @@ lifecycle(hid_t fapl2)
     /* Create several more bottom groups, to push the top group almost to a symbol table */
     /* (Start counting at '1', since we've already created one bottom group */
     for(u = 1; u < LIFECYCLE_MAX_COMPACT; u++) {
-        sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+        HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
         if((gid2 = H5Gcreate2(gid, objname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
 
         /* Check on bottom group's status */
@@ -421,14 +421,14 @@ lifecycle(hid_t fapl2)
     if(H5G__is_new_dense_test(gid) != FALSE) TEST_ERROR
 
     /* Check that the object header is only one chunk and the space has been allocated correctly */
-    if(H5Oget_info(gid, &oinfo) < 0) TEST_ERROR
-    if(oinfo.hdr.space.total != 151) TEST_ERROR
-    if(oinfo.hdr.space.free != 0) TEST_ERROR
-    if(oinfo.hdr.nmesgs != 6) TEST_ERROR
-    if(oinfo.hdr.nchunks != 1) TEST_ERROR
+    if(H5Oget_native_info(gid, &ninfo, H5O_NATIVE_INFO_HDR) < 0) TEST_ERROR
+    if(ninfo.hdr.space.total != 151) TEST_ERROR
+    if(ninfo.hdr.space.free != 0) TEST_ERROR
+    if(ninfo.hdr.nmesgs != 6) TEST_ERROR
+    if(ninfo.hdr.nchunks != 1) TEST_ERROR
 
     /* Create one more "bottom" group, which should push top group into using a symbol table */
-    sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+    HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
     if((gid2 = H5Gcreate2(gid, objname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
 
     /* Check on bottom group's status */
@@ -443,15 +443,15 @@ lifecycle(hid_t fapl2)
     if(H5G__is_new_dense_test(gid) != TRUE) TEST_ERROR
 
     /* Check that the object header is still one chunk and the space has been allocated correctly */
-    if(H5Oget_info(gid, &oinfo) < 0) TEST_ERROR
-    if(oinfo.hdr.space.total != 151) TEST_ERROR
-    if(oinfo.hdr.space.free != 92) TEST_ERROR
-    if(oinfo.hdr.nmesgs != 3) TEST_ERROR
-    if(oinfo.hdr.nchunks != 1) TEST_ERROR
+    if(H5Oget_native_info(gid, &ninfo, H5O_NATIVE_INFO_HDR) < 0) TEST_ERROR
+    if(ninfo.hdr.space.total != 151) TEST_ERROR
+    if(ninfo.hdr.space.free != 92) TEST_ERROR
+    if(ninfo.hdr.nmesgs != 3) TEST_ERROR
+    if(ninfo.hdr.nchunks != 1) TEST_ERROR
 
     /* Unlink objects from top group */
     while(u >= LIFECYCLE_MIN_DENSE) {
-        sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+        HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
 
         if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
 
@@ -464,7 +464,7 @@ lifecycle(hid_t fapl2)
     if(H5G__is_new_dense_test(gid) != TRUE) TEST_ERROR
 
     /* Unlink one more object from the group, which should transform back to using links */
-    sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+    HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
     if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
     u--;
 
@@ -474,10 +474,10 @@ lifecycle(hid_t fapl2)
     if(nmsgs != (LIFECYCLE_MIN_DENSE - 1)) TEST_ERROR
 
     /* Unlink last two objects from top group */
-    sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+    HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
     if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
     u--;
-    sprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
+    HDsprintf(objname, LIFECYCLE_BOTTOM_GROUP, u);
     if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
 
     /* Check on top group's status */
@@ -507,15 +507,15 @@ lifecycle(hid_t fapl2)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(gcpl);
-    	H5Gclose(gid2);
-    	H5Gclose(gid);
-    	H5Fclose(fid);
+        H5Gclose(gcpl);
+        H5Gclose(gid2);
+        H5Gclose(gid);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 } /* end lifecycle() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    long_compact
  *
@@ -532,13 +532,13 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-long_compact(hid_t fapl2)
+long_compact(hid_t fcpl, hid_t fapl2)
 {
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	gid = (-1);             /* Group ID */
-    hid_t	gid2 = (-1);            /* Group ID */
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    gid = (-1);             /* Group ID */
+    hid_t    gid2 = (-1);            /* Group ID */
     char        *objname = NULL;        /* Object name */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
     h5_stat_size_t       empty_size;             /* Size of an empty file */
     h5_stat_size_t       file_size;              /* Size of each file created */
 
@@ -546,7 +546,7 @@ long_compact(hid_t fapl2)
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl2, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl2)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl2)) < 0) TEST_ERROR
 
     /* Close file */
     if(H5Fclose(fid) < 0) TEST_ERROR
@@ -640,9 +640,9 @@ long_compact(hid_t fapl2)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(gid2);
-    	H5Gclose(gid);
-    	H5Fclose(fid);
+        H5Gclose(gid2);
+        H5Gclose(gid);
+        H5Fclose(fid);
     } H5E_END_TRY;
 
     if(objname)
@@ -651,7 +651,7 @@ error:
     return 1;
 } /* end long_compact() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    read_old
  *
@@ -693,7 +693,7 @@ read_old(void)
 
     /* Create a bunch of objects in the group */
     for(u = 0; u < READ_OLD_NGROUPS; u++) {
-        sprintf(objname, "Group %u", u);
+        HDsprintf(objname, "Group %u", u);
         if((gid2 = H5Gcreate2(gid, objname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
 
         /* Check on bottom group's status */
@@ -711,7 +711,7 @@ read_old(void)
 
     /* Delete new objects from old group */
     for(u = 0; u < READ_OLD_NGROUPS; u++) {
-        sprintf(objname, "Group %u", u);
+        HDsprintf(objname, "Group %u", u);
         if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
     } /* end for */
 
@@ -732,13 +732,13 @@ read_old(void)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(gid);
-    	H5Fclose(fid);
+        H5Gclose(gid);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 } /* end read_old() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    no_compact
  *
@@ -755,24 +755,24 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-no_compact(hid_t fapl2)
+no_compact(hid_t fcpl, hid_t fapl2)
 {
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	gid = (-1);             /* Group ID */
-    hid_t	gid2 = (-1);            /* Datatype ID */
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    gid = (-1);             /* Group ID */
+    hid_t    gid2 = (-1);            /* Datatype ID */
     hid_t       gcpl = (-1);            /* Group creation property list ID */
     char        objname[NAME_BUF_SIZE];         /* Object name */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
     h5_stat_size_t       empty_size;             /* Size of an empty file */
     h5_stat_size_t       file_size;              /* Size of each file created */
-    unsigned	est_num_entries;	/* Estimated # of entries in group */
-    unsigned	est_name_len;		/* Estimated length of entry name */
+    unsigned    est_num_entries;    /* Estimated # of entries in group */
+    unsigned    est_name_len;        /* Estimated length of entry name */
 
     TESTING("group without compact form");
 
     /* Create file */
     h5_fixname(FILENAME[0], fapl2, filename, sizeof(filename));
-    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl2)) < 0) TEST_ERROR
+    if((fid = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl2)) < 0) TEST_ERROR
 
     /* Close file */
     if(H5Fclose(fid) < 0) TEST_ERROR
@@ -804,7 +804,7 @@ no_compact(hid_t fapl2)
     if(H5G__is_empty_test(gid) != TRUE) TEST_ERROR
 
     /* Create first "bottom" group */
-    sprintf(objname, NO_COMPACT_BOTTOM_GROUP, (unsigned)0);
+    HDsprintf(objname, NO_COMPACT_BOTTOM_GROUP, (unsigned)0);
     if((gid2 = H5Gcreate2(gid, objname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) TEST_ERROR
 
     /* Check on bottom group's status */
@@ -819,7 +819,7 @@ no_compact(hid_t fapl2)
     if(H5G__is_new_dense_test(gid) != TRUE) TEST_ERROR
 
     /* Unlink object from top group */
-    sprintf(objname, NO_COMPACT_BOTTOM_GROUP, (unsigned)0);
+    HDsprintf(objname, NO_COMPACT_BOTTOM_GROUP, (unsigned)0);
     if(H5Ldelete(gid, objname, H5P_DEFAULT) < 0) FAIL_STACK_ERROR
 
     /* Check on top group's status */
@@ -845,15 +845,15 @@ no_compact(hid_t fapl2)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(gcpl);
-    	H5Gclose(gid2);
-    	H5Gclose(gid);
-    	H5Fclose(fid);
+        H5Gclose(gcpl);
+        H5Gclose(gid2);
+        H5Gclose(gid);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 } /* end no_compact() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    gcpl_on_root
  *
@@ -871,15 +871,15 @@ error:
 static int
 gcpl_on_root(hid_t fapl2)
 {
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	gid = (-1);             /* Group ID */
-    hid_t	gid2 = (-1);            /* Datatype ID */
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    gid = (-1);             /* Group ID */
+    hid_t    gid2 = (-1);            /* Datatype ID */
     hid_t       fcpl = (-1);            /* File creation property list ID */
     hid_t       gcpl = (-1);            /* Group creation property list ID */
     hid_t       lcpl = (-1);            /* Link creation property list ID */
     unsigned    max_compact;            /* Maximum # of links to store in group compactly */
     unsigned    min_dense;              /* Minimum # of links to store in group "densely" */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
 
     TESTING("setting root group creation properties");
 
@@ -964,17 +964,17 @@ gcpl_on_root(hid_t fapl2)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(lcpl);
-    	H5Gclose(gcpl);
-    	H5Gclose(gid2);
-    	H5Gclose(gid);
-    	H5Gclose(fcpl);
-    	H5Fclose(fid);
+        H5Gclose(lcpl);
+        H5Gclose(gcpl);
+        H5Gclose(gid2);
+        H5Gclose(gid);
+        H5Gclose(fcpl);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 } /* end gcpl_on_root() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    old_api
  *
@@ -992,11 +992,11 @@ static int
 old_api(hid_t fapl)
 {
 #ifndef H5_NO_DEPRECATED_SYMBOLS
-    hid_t	fid = (-1);             /* File ID */
-    hid_t	gid = (-1);             /* Group ID */
+    hid_t    fid = (-1);             /* File ID */
+    hid_t    gid = (-1);             /* Group ID */
     h5_stat_size_t small_file_size;     /* Size of small group file */
     h5_stat_size_t large_file_size;     /* Size of large group file */
-    char	filename[NAME_BUF_SIZE];
+    char    filename[NAME_BUF_SIZE];
 #endif /* H5_NO_DEPRECATED_SYMBOLS */
 
     TESTING("old API routines");
@@ -1051,7 +1051,7 @@ old_api(hid_t fapl)
     fapl = fapl;
 
     SKIPPED();
-    puts("    Deprecated API symbols not enabled");
+    HDputs("    Deprecated API symbols not enabled");
 #endif /* H5_NO_DEPRECATED_SYMBOLS */
 
     return 0;
@@ -1059,14 +1059,14 @@ old_api(hid_t fapl)
 #ifndef H5_NO_DEPRECATED_SYMBOLS
 error:
     H5E_BEGIN_TRY {
-    	H5Gclose(gid);
-    	H5Fclose(fid);
+        H5Gclose(gid);
+        H5Fclose(fid);
     } H5E_END_TRY;
     return 1;
 #endif /* H5_NO_DEPRECATED_SYMBOLS */
 } /* end old_api() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:    corrupt_stab_msg
  *
@@ -1138,24 +1138,24 @@ corrupt_stab_msg(void)
 
 error:
     H5E_BEGIN_TRY {
-    	H5Dclose(did);
-    	H5Fclose(fid);
+        H5Dclose(did);
+        H5Fclose(fid);
     } H5E_END_TRY;
 
     return 1;
-} /* end old_api() */
+} /* end corrupt_stab_msg() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	main
+ * Function:    main
  *
- * Purpose:	Test groups
+ * Purpose:    Test groups
  *
- * Return:	Success:	zero
+ * Return:    Success:    zero
  *
- *		Failure:	non-zero
+ *        Failure:    non-zero
  *
- * Programmer:	Robb Matzke
+ * Programmer:    Robb Matzke
  *              Tuesday, November 24, 1998
  *
  * Modifications:
@@ -1165,9 +1165,20 @@ error:
 int
 main(void)
 {
-    hid_t	fapl, fapl2;    /* File access property list IDs */
-    hbool_t new_format;     /* Whether to use the new format or not */
-    int	nerrors = 0;
+    hid_t    fapl, fapl2;        /* File access property list IDs */
+    hid_t    fcpl, fcpl2;        /* File creation property list ID */
+    unsigned     new_format;         /* Whether to use the new format or not */
+    const char  *env_h5_drvr;          /* File Driver value from environment */
+    hbool_t     contig_addr_vfd;     /* Whether VFD used has a contigous address space */
+    int        nerrors = 0;
+
+    /* Get the VFD to use */
+    env_h5_drvr = HDgetenv("HDF5_DRIVER");
+    if(env_h5_drvr == NULL)
+        env_h5_drvr = "nomatch";
+
+    /* VFD that does not support contigous address space */
+    contig_addr_vfd = (hbool_t)(HDstrcmp(env_h5_drvr, "split") && HDstrcmp(env_h5_drvr, "multi"));
 
     /* Reset library */
     h5_reset();
@@ -1179,20 +1190,42 @@ main(void)
     /* Set the "use the latest version of the format" bounds for creating objects in the file */
     if(H5Pset_libver_bounds(fapl2, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST) < 0) TEST_ERROR
 
+    /* Set up file creation property list */
+    if((fcpl = H5Pcreate(H5P_FILE_CREATE)) < 0) TEST_ERROR
+    if((fcpl2 = H5Pcopy(fcpl)) < 0) TEST_ERROR
+
+    /* Set to use paged aggregation strategy and persisting free-space */
+    /* Skip testing for multi/split drivers */
+    if(H5Pset_file_space_strategy(fcpl2, H5F_FSPACE_STRATEGY_PAGE, 1, (hsize_t)1) < 0)
+        TEST_ERROR
+
     /* Loop over using new group format */
     for(new_format = FALSE; new_format <= TRUE; new_format++) {
+        hid_t my_fapl = fapl;
+        hid_t my_fcpl = fcpl;
+
+        if(!contig_addr_vfd)
+            continue;
+
+        if(new_format) {
+            my_fapl = fapl2;
+            my_fcpl = fcpl2;    /* Set to use paged aggregation and persisting free-space */
+        }
+
         /* Perform basic tests, with old & new style groups */
-        nerrors += test_misc((new_format ? fapl2 : fapl), new_format);
-        nerrors += test_long((new_format ? fapl2 : fapl), new_format);
-        nerrors += test_large((new_format ? fapl2 : fapl), new_format);
+        nerrors += test_misc(my_fcpl, my_fapl, new_format);
+        nerrors += test_long(my_fcpl, my_fapl, new_format);
+        nerrors += test_large(my_fcpl, my_fapl, new_format);
     } /* end for */
 
     /* New format group specific tests (require new format features) */
-    nerrors += lifecycle(fapl2);
-    nerrors += long_compact(fapl2);
-    nerrors += read_old();
-    nerrors += no_compact(fapl2);
-    nerrors += gcpl_on_root(fapl2);
+    if(contig_addr_vfd) {
+        nerrors += lifecycle(fcpl2, fapl2);
+        nerrors += long_compact(fcpl2, fapl2);
+        nerrors += read_old();
+        nerrors += no_compact(fcpl2, fapl2);
+        nerrors += gcpl_on_root(fapl2);
+    }
 
     /* Old group API specific tests */
     nerrors += old_api(fapl);
@@ -1200,6 +1233,8 @@ main(void)
 
     /* Close 2nd FAPL */
     H5Pclose(fapl2);
+    H5Pclose(fcpl);
+    H5Pclose(fcpl2);
 
     /* Verify symbol table messages are cached */
     nerrors += (h5_verify_cached_stabs(FILENAME, fapl) < 0 ? 1 : 0);
@@ -1208,7 +1243,7 @@ main(void)
     if(nerrors)
         goto error;
 
-    puts("All symbol table tests passed.");
+    HDputs("All symbol table tests passed.");
 
     /* Cleanup */
     if (GetTestCleanup()) {
@@ -1220,7 +1255,7 @@ main(void)
     return 0;
 
 error:
-    puts("*** TESTS FAILED ***");
+    HDputs("*** TESTS FAILED ***");
     return 1;
 }
 

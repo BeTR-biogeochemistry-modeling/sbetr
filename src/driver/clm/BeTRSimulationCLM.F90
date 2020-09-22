@@ -18,6 +18,20 @@ module BeTRSimulationCLM
   use BeTR_TimeMod        , only : betr_time_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_varcon         , only : betr_maxpatch_pft
+  use CNNitrogenStateType, only : nitrogenstate_type
+  use pfNitrogenStateType, only : pf_nitrogenstate_type
+  use PhosphorusStateType, only : phosphorusstate_type
+  use CNCarbonFluxType   , only : carbonflux_type
+  use PfCarbonFluxType  , only : pf_carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PfNitrogenFluxType , only : pf_nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use PfPhosphorusFluxType , only : pf_phosphorusflux_type
+  use WaterStateType  , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use TemperatureType   , only : temperature_type
+  use PfTemperatureType   , only : pf_temperature_type
+  use PfWaterfluxType     , only : pf_waterflux_type
   implicit none
 
   private
@@ -85,11 +99,11 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
+    character(len=*)                         , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
     logical,                        optional , intent(in)    :: masterproc
     betr_nlevsoi                       = nlevsoi
@@ -119,7 +133,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer,base_filename)
+  subroutine CLMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer,base_filename, case_id)
     !DESCRIPTION
     !initialize interface
     !
@@ -140,11 +154,12 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: case_id
+    character(len=*)                         , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -166,7 +181,7 @@ contains
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer,base_filename )
+    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer,base_filename, case_id )
 
   end subroutine CLMInitOffline
   !---------------------------------------------------------------------------------
@@ -204,7 +219,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds,  this%betr_col(c), &
-         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%betr_pft(c), this%num_surfc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -252,7 +267,7 @@ contains
     do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
        call this%betr(c)%step_with_drainage(betr_bounds, this%betr_col(c),   &
-         this%num_soilc, this%filter_soilc, this%jtops, &
+         this%num_surfc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
        if(this%bstatus(c)%check_status())then
          call this%bsimstatus%setcol(c)
@@ -297,7 +312,7 @@ contains
      c = filter_nolakec(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds,  &
-      this%num_soilc, this%filter_soilc,  this%biophys_forc(c))
+      this%num_surfc, this%filter_soilc,  this%biophys_forc(c))
   enddo
   end subroutine CLMDiagnoseDtracerFreezeThaw
 
@@ -332,14 +347,14 @@ contains
       c = filter_soilc_hydrologyc(fc)
       if(.not. this%active_col(c))cycle
       call this%betr(c)%calc_dew_sub_flux(this%betr_time, betr_bounds, this%betr_col(c), &
-       this%num_soilc, this%filter_soilc, this%biophys_forc(c), this%betr(c)%tracers, &
+       this%num_surfc, this%filter_soilc, this%biophys_forc(c), this%betr(c)%tracers, &
        this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo
 
   end subroutine CLMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine CLMBetrSoilFluxStateRecv(this,  num_soilc, filter_soilc)
+  subroutine CLMBetrSoilFluxStateRecv(this,  num_surfc, filter_soilc)
    !DESCRIPTION
    !this is to expaneded
    !
@@ -348,7 +363,7 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
-    integer                         , intent(in)    :: num_soilc
+    integer                         , intent(in)    :: num_surfc
     integer                         , intent(in)    :: filter_soilc(:)
 
     integer :: fc, c
@@ -356,11 +371,11 @@ contains
 
     call this%BeTRSetBounds(betr_bounds)
 
-!    do fc = 1, num_soilc
+!    do fc = 1, num_surfc
 !      c = filter_soilc(fc)
 !      if(.not. this%active_col(c))cycle
 !      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
-!         this%num_soilc, this%filter_soilc,                                   &
+!         this%num_surfc, this%filter_soilc,                                   &
 !         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
 !    enddo
   end subroutine CLMBetrSoilFluxStateRecv
@@ -396,12 +411,12 @@ contains
     SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
     ! humor the compiler about unused variables
-    if (this%num_soilc > 0)                  continue
+    if (this%num_surfc > 0)                  continue
     if (present(soil_water_retention_curve)) continue
 
     associate(                                            & !
-         h2osoi_vol =>    waterstate_vars%h2osoi_vol_col, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
-         smp_l      =>    waterstate_vars%smp_l_col,      & ! Output: [real(r8) (:,:) ]  soil suction (mm)
+         h2osoi_vol =>    waterstate_vars%h2osoi_vol, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
+         smp_l      =>    waterstate_vars%smp_l,      & ! Output: [real(r8) (:,:) ]  soil suction (mm)
          bsw        =>    soilstate_vars%bsw_col,         & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
          watsat     =>    soilstate_vars%watsat_col,      & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
          sucsat     =>    soilstate_vars%sucsat_col       & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
@@ -443,7 +458,7 @@ contains
 
   !------------------------------------------------------------------------
   subroutine clm_h2oiso_consistency_check(this, &
-       bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+       bounds, ubj, num_surfc, filter_soilc, waterstate_vars)
     !DESCRIPTION
     ! check the overall water mass consistency between betr and clm
     !
@@ -457,7 +472,7 @@ contains
     class(betr_simulation_clm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds  ! bounds
     integer                         , intent(in)    :: ubj
-    integer                         , intent(in)    :: num_soilc
+    integer                         , intent(in)    :: num_surfc
     integer                         , intent(in)    :: filter_soilc(:)
     type(waterstate_type)           , intent(in)    :: waterstate_vars
     !TEMPORARY VARIABLES
@@ -471,8 +486,8 @@ contains
 
     c = 1
     associate(                                                                    &
-         h2osoi_ice           => waterstate_vars%h2osoi_ice_col,                  & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
-         h2osoi_liq           => waterstate_vars%h2osoi_liq_col,                  & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
+         h2osoi_ice           => waterstate_vars%h2osoi_ice,                  & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
+         h2osoi_liq           => waterstate_vars%h2osoi_liq,                  & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
          end_tracer_molarmass => this%betr(c)%tracerstates%end_tracer_molarmass_col, &
          id_trc_o18_h2o       => this%betr(c)%tracers%id_trc_o18_h2o                 &
          )
@@ -481,7 +496,7 @@ contains
       allocate(eyev(1:ubj))
       eyev=1._r8
 
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
          c = filter_soilc(fc)
          if(.not. this%active_col(c))cycle
          totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev,this%bstatus(c)) + dot_sum(h2osoi_liq(c,1:ubj),eyev,this%bstatus(c))
@@ -500,9 +515,9 @@ contains
   end subroutine clm_h2oiso_consistency_check
 
   !------------------------------------------------------------------------
-  subroutine CLMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars)
+  subroutine CLMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars,pf_carbonflux_vars,&
+    waterstate_vars, waterflux_vars, pf_waterflux_vars, temperature_vars, pf_temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
@@ -513,7 +528,6 @@ contains
   use WaterfluxType     , only : waterflux_type
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
-  use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use elm_varpar        , only : nlevsno, nlevsoi
   use ColumnType        , only : column_type
@@ -524,19 +538,23 @@ contains
   type(bounds_type)               , intent(in)           :: bounds
   type(patch_type)                , intent(in) :: pft
   type(column_type)               , intent(in)    :: col ! column type
-  type(carbonflux_type)           , optional, intent(in) :: carbonflux_vars
-  type(Waterstate_Type)           , optional, intent(in) :: Waterstate_vars
-  type(waterflux_type)            , optional, intent(in) :: waterflux_vars
-  type(temperature_type)          , optional, intent(in) :: temperature_vars
-  type(soilhydrology_type)        , optional, intent(in) :: soilhydrology_vars
-  type(atm2lnd_type)              , optional, intent(in) :: atm2lnd_vars
-  type(canopystate_type)          , optional, intent(in) :: canopystate_vars
-  type(chemstate_type)            , optional, intent(in) :: chemstate_vars
-  type(soilstate_type)            , optional, intent(in) :: soilstate_vars
+  type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
+  type(pf_carbonflux_type)    , optional, intent(in) :: pf_carbonflux_vars
+  type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
+  type(waterflux_type)        , optional, intent(in) :: waterflux_vars
+  type(pf_waterflux_type)     , optional, intent(in) :: pf_waterflux_vars
+  type(temperature_type)      , optional, intent(in) :: temperature_vars
+  type(pf_temperature_type)   , optional, intent(in) :: pf_temperature_vars
+  type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
+  type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
+  type(canopystate_type)      , optional, intent(in) :: canopystate_vars
+  type(chemstate_type)        , optional, intent(in) :: chemstate_vars
+  type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
-  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-      chemstate_vars, soilstate_vars)
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, &
+    carbonflux_vars, pf_carbonflux_vars, waterstate_vars,  waterflux_vars, pf_waterflux_vars, &
+    temperature_vars, pf_temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    chemstate_vars, soilstate_vars)
 
   !the following will be CLM specific
   end subroutine CLMSetBiophysForcing

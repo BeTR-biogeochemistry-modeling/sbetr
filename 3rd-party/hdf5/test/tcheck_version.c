@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -31,7 +29,7 @@
 
 #include "h5test.h"
 
-#define	progname	"tcheck_version"
+#define    progname    "tcheck_version"
 
 /* prototypes */
 void showhelp(void);
@@ -39,20 +37,20 @@ void parse(int ac, char **av);
 void abort_intercept (int H5_ATTR_UNUSED sig);
 
 /* global variables */
-unsigned	major = H5_VERS_MAJOR;
-unsigned	minor = H5_VERS_MINOR;
-unsigned	release = H5_VERS_RELEASE;
+unsigned    major = H5_VERS_MAJOR;
+unsigned    minor = H5_VERS_MINOR;
+unsigned    release = H5_VERS_RELEASE;
 
 void
 showhelp(void)
 {
-    printf("Usage: " progname " [-h] [-t<vers>]\n");
-    printf("\t-h\tShow this page and version information\n");
-    printf("\t-t<vers>: Test by changing (adding 1 to) the <vers> to trigger\n");
-    printf("\t\t  the warning. <vers> can be:\n");
-    printf("\t\t\tM for Major version number (%d)\n", H5_VERS_MAJOR);
-    printf("\t\t\tm for Minor version number (%d)\n", H5_VERS_MINOR);
-    printf("\t\t\tr for Release number (%d)\n", H5_VERS_RELEASE);
+    HDprintf("Usage: " progname " [-h] [-t<vers>]\n");
+    HDprintf("\t-h\tShow this page and version information\n");
+    HDprintf("\t-t<vers>: Test by changing (adding 1 to) the <vers> to trigger\n");
+    HDprintf("\t\t  the warning. <vers> can be:\n");
+    HDprintf("\t\t\tM for Major version number (%d)\n", H5_VERS_MAJOR);
+    HDprintf("\t\t\tm for Minor version number (%d)\n", H5_VERS_MINOR);
+    HDprintf("\t\t\tr for Release number (%d)\n", H5_VERS_RELEASE);
 }
 
 
@@ -62,36 +60,36 @@ parse(int ac, char **av)
     char *pt;
 
     while (--ac > 0){
-	pt = *(++av);
-	if (*pt != '-') {
-	    fprintf(stderr, "Unknown option(%s). Aborted.\n", *av);
-	    exit(1);
-	}else{
-	    switch(*(++pt)) {
-		case 't': 	/* option -t */
-		    switch(*(++pt)) {
-			case 'M':
-			    major++;
-			    break;
-			case 'm':
-			    minor++;
-			    break;
-			case 'r':
-			    release++;
-			    break;
-			default:
-			    fprintf(stderr, "Unknown -v parameter (%s). Aborted.\n", *av);
-			    exit(1);
-		    }
-		    break;
-		case 'h':	/* help page */
-		    showhelp();
-		    exit(0);
-		default:
-		    fprintf(stderr, "Unknown option(%s). Aborted.\n", *av);
-		    exit(1);
-	    }
-	}
+    pt = *(++av);
+    if (*pt != '-') {
+        HDfprintf(stderr, "Unknown option(%s). Aborted.\n", *av);
+        HDexit(EXIT_FAILURE);
+    }else{
+        switch(*(++pt)) {
+        case 't':     /* option -t */
+            switch(*(++pt)) {
+            case 'M':
+                major++;
+                break;
+            case 'm':
+                minor++;
+                break;
+            case 'r':
+                release++;
+                break;
+            default:
+                HDfprintf(stderr, "Unknown -v parameter (%s). Aborted.\n", *av);
+                HDexit(EXIT_FAILURE);
+            }
+            break;
+        case 'h':    /* help page */
+            showhelp();
+            HDexit(EXIT_SUCCESS);
+        default:
+            HDfprintf(stderr, "Unknown option(%s). Aborted.\n", *av);
+            HDexit(EXIT_FAILURE);
+        }
+    }
     }
 }
 
@@ -104,7 +102,7 @@ parse(int ac, char **av)
  * some systems may produce extra messages and/or produce core dump.
  * This tries to eliminate those side effects.
  */
-void
+H5_ATTR_NORETURN void
 abort_intercept (int H5_ATTR_UNUSED sig)
 {
     HDexit(6);

@@ -5,12 +5,10 @@
 *                                                                           *
 * This file is part of HDF5.  The full HDF5 copyright notice, including     *
 * terms governing use, modification, and redistribution, is contained in    *
-* the files COPYING and Copyright.html.  COPYING can be found at the root   *
-* of the source code distribution tree; Copyright.html can be found at the  *
-* root level of an installed copy of the electronic HDF5 document set and   *
-* is linked from the top-level documents page.  It can also be found at     *
-* http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-* access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* This files contains C stubs for H5D Fortran APIs */
@@ -39,7 +37,7 @@
 */
 
 int_f
-nh5ltmake_dataset_c (hid_t_f *loc_id,
+h5ltmake_dataset_c (hid_t_f *loc_id,
                      size_t_f *namelen,
                      _fcd name,
                      int_f *rank,
@@ -83,474 +81,12 @@ nh5ltmake_dataset_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_dims!=NULL)
-        free(c_dims);
+        HDfree(c_dims);
     return ret_value;
 }
 
-int_f
-nh5ltmake_dataset_int1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_int7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl1_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl2_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl3_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl4_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl5_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl6_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_fl7_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl1_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl2_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl3_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl4_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl5_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl6_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_dl7_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         int_f *rank,
-                         hsize_t_f *dims,
-                         hid_t_f *type_id,
-                         void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint1_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint2_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint3_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint4_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint5_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint6_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nint7_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           int_f *rank,
-                           hsize_t_f *dims,
-                           hid_t_f *type_id,
-                           void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_nfl7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
-int_f
-nh5ltmake_dataset_ndl7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          int_f *rank,
-                          hsize_t_f *dims,
-                          hid_t_f *type_id,
-                          void *buf)
-{
-    return nh5ltmake_dataset_c (loc_id, namelen, name, rank, dims, type_id, buf);
-}
 /*-------------------------------------------------------------------------
 * Function: H5LTread_dataset_c
 *
@@ -571,12 +107,11 @@ nh5ltmake_dataset_ndl7_c (hid_t_f *loc_id,
 */
 
 int_f
-nh5ltread_dataset_c (hid_t_f *loc_id,
+h5ltread_dataset_c (hid_t_f *loc_id,
                      size_t_f *namelen,
                      _fcd name,
                      hid_t_f *type_id,
-                     void *buf,
-                     hsize_t_f *dims)
+                     void *buf)
 {
     int     ret_value = -1;
     herr_t  ret;
@@ -606,431 +141,11 @@ nh5ltread_dataset_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
 
-int_f
-nh5ltread_dataset_int1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_int7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl1_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl2_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl3_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl4_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl5_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl6_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_fl7_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl1_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl2_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl3_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl4_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl5_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl6_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_dl7_c (hid_t_f *loc_id,
-                         size_t_f *namelen,
-                         _fcd name,
-                         hid_t_f *type_id,
-                         void *buf,
-                         hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint1_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint2_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint3_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint4_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint5_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint6_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nint7_c (hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd name,
-                           hid_t_f *type_id,
-                           void *buf,
-                           hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_nfl7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl1_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl2_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl3_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl4_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl5_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl6_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
-int_f
-nh5ltread_dataset_ndl7_c (hid_t_f *loc_id,
-                          size_t_f *namelen,
-                          _fcd name,
-                          hid_t_f *type_id,
-                          void *buf,
-                          hsize_t_f *dims)
-{
-    return nh5ltread_dataset_c(loc_id, namelen, name, type_id, buf, dims);
-}
 /*-------------------------------------------------------------------------
 * Function: H5LTmake_dataset_string_c
 *
@@ -1051,7 +166,7 @@ nh5ltread_dataset_ndl7_c (hid_t_f *loc_id,
 */
 
 int_f
-nh5ltmake_dataset_string_c (hid_t_f *loc_id,
+h5ltmake_dataset_string_c (hid_t_f *loc_id,
                             size_t_f *namelen,
                             _fcd name,
                             size_t_f *buflen,
@@ -1088,9 +203,9 @@ nh5ltmake_dataset_string_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_buf!=NULL)
-        free(c_buf);
+        HDfree(c_buf);
 
     return ret_value;
 }
@@ -1116,7 +231,7 @@ done:
 */
 
 int_f
-nh5ltread_dataset_string_c (hid_t_f *loc_id,
+h5ltread_dataset_string_c (hid_t_f *loc_id,
                             size_t_f *namelen,
                             _fcd name,
                             char *buf)
@@ -1147,12 +262,10 @@ nh5ltread_dataset_string_c (hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
-
-
 
 /*-------------------------------------------------------------------------
 * Function: H5LTset_attribute_int_c
@@ -1174,19 +287,20 @@ done:
 */
 
 int_f
-nh5ltset_attribute_int_c(hid_t_f *loc_id,
+h5ltset_attribute_c(hid_t_f *loc_id,
                          size_t_f *namelen,
                          _fcd dsetname,
                          size_t_f *attrnamelen,
                          _fcd attrname,
                          size_t_f *size,
-                         void *buf)
+		         void *buf, char *dtype, size_t_f *sizeof_val)
 {
     int     ret_value = -1;
-    herr_t  ret;
+    herr_t  ret = SUCCEED;
     hid_t   c_loc_id;
     char    *c_name = NULL;
     char    *c_attrname = NULL;
+    char    *c_buf = NULL;
     size_t  c_size;
 
     /*
@@ -1206,244 +320,54 @@ nh5ltset_attribute_int_c(hid_t_f *loc_id,
     c_loc_id = (hid_t)*loc_id;
     c_size   = (size_t)*size;
 
-    if (sizeof(int_f) == sizeof(int))
-        ret = H5LTset_attribute_int(c_loc_id,c_name,c_attrname,(const int *)buf,c_size);
-    else if (sizeof(int_f) == sizeof(long))
-      ret = H5LTset_attribute_long(c_loc_id,c_name,c_attrname,(const long *)buf,c_size);
-    else if (sizeof(int_f) == sizeof(long long))
-        ret = H5LTset_attribute_long_long(c_loc_id,c_name,c_attrname,(const long long *)buf,c_size);
-    else
+    if( HDstrncmp(dtype,"I",1) == 0 ) {
+      if ((size_t)*sizeof_val == sizeof(int))
+        ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_INT, (const int *)buf);
+      else if ((size_t)*sizeof_val == sizeof(long))
+	ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_LONG, (const long *)buf);
+#if H5_SIZEOF_LONG != H5_SIZEOF_LONG_LONG
+      else if ((size_t)*sizeof_val == sizeof(long long))
+        ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_LLONG, (const long long *)buf);
+#endif /* H5_SIZEOF_LONG != H5_SIZEOF_LONG_LONG */
+      else
+        goto done;
+    } else if ( HDstrncmp(dtype,"R",1) == 0 ) {
+      if((size_t)*sizeof_val == sizeof(float))
+	ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_FLOAT, (const float *)buf);
+      else if((size_t)*sizeof_val == sizeof(double))
+	ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_DOUBLE,  (const double *)buf);
+#if H5_SIZEOF_LONG_DOUBLE !=0
+      else if((size_t)*sizeof_val == sizeof(long double))
+	ret = H5LT_set_attribute_numerical(c_loc_id,c_name,c_attrname, c_size, H5T_NATIVE_LDOUBLE, (const long double *)buf);
+#endif
+      else
+        goto done;
+    } else if ( HDstrncmp(dtype,"C",1) == 0 ) {
+
+      c_buf = (char *)HD5f2cstring((_fcd)buf, c_size);
+      if (c_buf == NULL)
         goto done;
 
+      ret = H5LTset_attribute_string(c_loc_id,c_name,c_attrname,c_buf);
+    }
     if (ret < 0)
-        goto done;
+      goto done;
 
     ret_value = 0;
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
      if(c_attrname!=NULL)
-        free(c_attrname);
-
-    return ret_value;
-}
-
-/*-------------------------------------------------------------------------
-* Function: H5LTset_attribute_float_c
-*
-* Purpose: Call H5LTset_attribute_float
-*
-* Return: Success: 0, Failure: -1
-*
-* Programmer: pvn@ncsa.uiuc.edu
-*
-* Date: October 05, 2004
-*
-* Comments:
-*
-* Modifications:
-*
-*
-*-------------------------------------------------------------------------
-*/
-
-int_f
-nh5ltset_attribute_float_c(hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd dsetname,
-                           size_t_f *attrnamelen,
-                           _fcd attrname,
-                           size_t_f *size,
-                           void *buf)
-{
-    int     ret_value = -1;
-    herr_t  ret;
-    hid_t   c_loc_id;
-    char    *c_name = NULL;
-    char    *c_attrname = NULL;
-    size_t  c_size;
-
-    /*
-    * convert FORTRAN name to C name
-    */
-    c_name = (char *)HD5f2cstring(dsetname, (size_t)*namelen);
-    if (c_name == NULL)
-         goto done;
-
-    c_attrname = (char *)HD5f2cstring(attrname, (size_t)*attrnamelen);
-    if (c_attrname == NULL)
-         goto done;
-
-    /*
-    * Call H5LTset_attribute_float function.
-    */
-    c_loc_id = (hid_t)*loc_id;
-    c_size   = (size_t)*size;
-
-    ret = H5LTset_attribute_float(c_loc_id,c_name,c_attrname,(float *)buf,c_size);
-
-    if (ret < 0)
-         goto done;
-
-    ret_value = 0;
-
-done:
-    if(c_name!=NULL)
-        free(c_name);
-    if(c_attrname!=NULL)
-        free(c_attrname);
-
-    return ret_value;
-}
-
-
-/*-------------------------------------------------------------------------
-* Function: H5LTset_attribute_double_c
-*
-* Purpose: Call H5LTset_attribute_double
-*
-* Return: Success: 0, Failure: -1
-*
-* Programmer: pvn@ncsa.uiuc.edu
-*
-* Date: October 05, 2004
-*
-* Comments:
-*
-* Modifications:
-*
-*
-*-------------------------------------------------------------------------
-*/
-
-int_f
-nh5ltset_attribute_double_c(hid_t_f *loc_id,
-                            size_t_f *namelen,
-                            _fcd dsetname,
-                            size_t_f *attrnamelen,
-                            _fcd attrname,
-                            size_t_f *size,
-                            void *buf)
-{
-    int     ret_value = -1;
-    herr_t  ret;
-    hid_t   c_loc_id;
-    char    *c_name = NULL;
-    char    *c_attrname = NULL;
-    size_t  c_size;
-
-    /*
-    * Convert FORTRAN name to C name
-    */
-    c_name = (char *)HD5f2cstring(dsetname, (size_t)*namelen);
-    if (c_name == NULL)
-        goto done;
-
-    c_attrname = (char *)HD5f2cstring(attrname, (size_t)*attrnamelen);
-    if (c_attrname == NULL)
-        goto done;
-
-    /*
-    * Call H5LTset_attribute_double function.
-    */
-    c_loc_id = (hid_t)*loc_id;
-    c_size   = (size_t)*size;
-
-    ret = H5LTset_attribute_double(c_loc_id,c_name,c_attrname,(double *)buf,c_size);
-
-    if (ret < 0)
-        goto done;
-
-    ret_value = 0;
-
-
-done:
-    if(c_name!=NULL)
-        free(c_name);
-    if(c_attrname!=NULL)
-        free(c_attrname);
-
-    return ret_value;
-}
-
-/*-------------------------------------------------------------------------
-* Function: H5LTset_attribute_string_c
-*
-* Purpose: Call H5LTset_attribute_string
-*
-* Return: Success: 0, Failure: -1
-*
-* Programmer: pvn@ncsa.uiuc.edu
-*
-* Date: October 05, 2004
-*
-* Comments:
-*
-* Modifications:
-*
-*
-*-------------------------------------------------------------------------
-*/
-
-int_f
-nh5ltset_attribute_string_c(hid_t_f *loc_id,
-                            size_t_f *namelen,
-                            _fcd dsetname,
-                            size_t_f *attrnamelen,
-                            _fcd attrname,
-                            size_t_f *buflen,
-                            void *buf)
-{
-    int     ret_value = -1;
-    herr_t  ret;
-    hid_t   c_loc_id;
-    char    *c_name = NULL;
-    char    *c_attrname = NULL;
-    char    *c_buf = NULL;
-
-    /*
-    * convert FORTRAN name to C name
-    */
-    c_name = (char *)HD5f2cstring(dsetname, (size_t)*namelen);
-    if (c_name == NULL)
-        goto done;
-
-    c_attrname = (char *)HD5f2cstring(attrname, (size_t)*attrnamelen);
-    if (c_attrname == NULL)
-        goto done;
-
-    c_buf = (char *)HD5f2cstring((_fcd)buf, (size_t)*buflen);
-    if (c_buf == NULL)
-        goto done;
-
-
-    /*
-    * call H5LTset_attribute_string function.
-    */
-    c_loc_id = (hid_t)*loc_id;
-
-    ret = H5LTset_attribute_string(c_loc_id,c_name,c_attrname,c_buf);
-
-    if (ret < 0)
-        goto done;
-
-    ret_value = 0;
-
-
-done:
-    if(c_name!=NULL)
-        free(c_name);
-    if(c_attrname!=NULL)
-        free(c_attrname);
+        HDfree(c_attrname);
     if(c_buf!=NULL)
-        free(c_buf);
+        HDfree(c_buf);
 
     return ret_value;
 }
 
 /*-------------------------------------------------------------------------
-* Function: H5LTget_attribute_int_c
+* Function: H5LTget_attribute_c
 *
 * Purpose: Call H5LTget_attribute_int
 *
@@ -1462,15 +386,15 @@ done:
 */
 
 int_f
-nh5ltget_attribute_int_c(hid_t_f *loc_id,
+h5ltget_attribute_c(hid_t_f *loc_id,
                          size_t_f *namelen,
                          _fcd dsetname,
                          size_t_f *attrnamelen,
                          _fcd attrname,
-                         void *buf)
+		         void *buf, char *dtype, size_t_f *sizeof_val)
 {
     int     ret_value = -1;
-    herr_t  ret;
+    herr_t  ret = SUCCEED;
     hid_t   c_loc_id;
     char    *c_name = NULL;
     char    *c_attrname = NULL;
@@ -1491,15 +415,30 @@ nh5ltget_attribute_int_c(hid_t_f *loc_id,
     */
     c_loc_id = (hid_t)*loc_id;
 
-    if(sizeof(int_f) == sizeof(int))
-      ret = H5LTget_attribute_int(c_loc_id,c_name,c_attrname,(int *)buf);
-    else if (sizeof(int_f) == sizeof(long))
-      ret = H5LTget_attribute_long(c_loc_id,c_name,c_attrname,(long *)buf);
-    else if (sizeof(int_f) == sizeof(long long))
-      ret = H5LTget_attribute_long_long(c_loc_id,c_name,c_attrname,(long long *)buf);
-    else
+    if( HDstrncmp(dtype,"I",1) == 0) {
+      if((size_t)*sizeof_val == sizeof(int))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_INT,buf);
+      else if ((size_t)*sizeof_val == sizeof(long))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_LONG,buf);
+#if H5_SIZEOF_LONG != H5_SIZEOF_LONG_LONG
+      else if ((size_t)*sizeof_val == sizeof(long long))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_LLONG,buf);
+#endif /* H5_SIZEOF_LONG != H5_SIZEOF_LONG_LONG */
+      else
         goto done;
-
+    } else if ( HDstrncmp(dtype,"R",1) == 0 ) {
+      if((size_t)*sizeof_val == sizeof(float))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_FLOAT,buf);
+      else if((size_t)*sizeof_val == sizeof(double))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_DOUBLE,buf);
+#if H5_SIZEOF_LONG_DOUBLE !=0
+      else if((size_t)*sizeof_val == sizeof(long double))
+	ret = H5LTget_attribute(c_loc_id,c_name,c_attrname,H5T_NATIVE_LDOUBLE,buf);
+#endif
+      else
+        goto done;
+    }
+ 
     if (ret < 0)
         goto done;
 
@@ -1507,142 +446,9 @@ nh5ltget_attribute_int_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_attrname!=NULL)
-        free(c_attrname);
-
-
-    return ret_value;
-}
-
-
-/*-------------------------------------------------------------------------
-* Function: H5LTget_attribute_float_c
-*
-* Purpose: Call H5LTget_attribute_float
-*
-* Return: Success: 0, Failure: -1
-*
-* Programmer: pvn@ncsa.uiuc.edu
-*
-* Date: October 05, 2004
-*
-* Comments:
-*
-* Modifications:
-*
-*
-*-------------------------------------------------------------------------
-*/
-
-int_f
-nh5ltget_attribute_float_c(hid_t_f *loc_id,
-                           size_t_f *namelen,
-                           _fcd dsetname,
-                           size_t_f *attrnamelen,
-                           _fcd attrname,
-                           void *buf)
-{
-    int     ret_value = -1;
-    herr_t  ret;
-    hid_t   c_loc_id;
-    char    *c_name = NULL;
-    char    *c_attrname = NULL;
-
-    /*
-    * convert FORTRAN name to C name
-    */
-    c_name = (char *)HD5f2cstring(dsetname, (size_t)*namelen);
-    if (c_name == NULL)
-        goto done;
-
-    c_attrname = (char *)HD5f2cstring(attrname, (size_t)*attrnamelen);
-    if (c_attrname == NULL)
-        goto done;
-
-    /*
-    * call H5LTget_attribute_int function.
-    */
-    c_loc_id = (hid_t)*loc_id;
-
-    ret = H5LTget_attribute_float(c_loc_id,c_name,c_attrname,(float*)buf);
-
-    if (ret < 0)
-        goto done;
-
-    ret_value = 0;
-
-done:
-    if(c_name!=NULL)
-        free(c_name);
-    if(c_attrname!=NULL)
-        free(c_attrname);
-
-    return ret_value;
-}
-
-/*-------------------------------------------------------------------------
-* Function: H5LTget_attribute_double_c
-*
-* Purpose: Call H5LTget_attribute_double
-*
-* Return: Success: 0, Failure: -1
-*
-* Programmer: pvn@ncsa.uiuc.edu
-*
-* Date: October 05, 2004
-*
-* Comments:
-*
-* Modifications:
-*
-*
-*-------------------------------------------------------------------------
-*/
-
-int_f
-nh5ltget_attribute_double_c(hid_t_f *loc_id,
-                            size_t_f *namelen,
-                            _fcd dsetname,
-                            size_t_f *attrnamelen,
-                            _fcd attrname,
-                            void *buf)
-{
-    int     ret_value = -1;
-    herr_t  ret;
-    hid_t   c_loc_id;
-    char    *c_name = NULL;
-    char    *c_attrname = NULL;
-
-    /*
-    * convert FORTRAN name to C name
-    */
-    c_name = (char *)HD5f2cstring(dsetname, (size_t)*namelen);
-    if (c_name == NULL)
-        goto done;
-
-    c_attrname = (char *)HD5f2cstring(attrname, (size_t)*attrnamelen);
-    if (c_attrname == NULL)
-        goto done;
-
-    /*
-    * call H5LTget_attribute_int function.
-    */
-    c_loc_id = (hid_t)*loc_id;
-
-    ret = H5LTget_attribute_double(c_loc_id,c_name,c_attrname,(double *)buf);
-
-    if (ret < 0)
-        goto done;
-
-    ret_value = 0;
-
-
-done:
-    if(c_name!=NULL)
-        free(c_name);
-    if(c_attrname!=NULL)
-        free(c_attrname);
+        HDfree(c_attrname);
 
     return ret_value;
 }
@@ -1667,7 +473,7 @@ done:
 */
 
 int_f
-nh5ltget_attribute_string_c(hid_t_f *loc_id,
+h5ltget_attribute_string_c(hid_t_f *loc_id,
                             size_t_f *namelen,
                             _fcd dsetname,
                             size_t_f *attrnamelen,
@@ -1712,11 +518,11 @@ nh5ltget_attribute_string_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_attrname!=NULL)
-        free(c_attrname);
+        HDfree(c_attrname);
     if(c_buf!=NULL)
-        free(c_buf);
+        HDfree(c_buf);
 
     return ret_value;
 }
@@ -1742,7 +548,7 @@ done:
 */
 
 int_f
-nh5ltget_dataset_ndims_c(hid_t_f *loc_id,
+h5ltget_dataset_ndims_c(hid_t_f *loc_id,
                          size_t_f *namelen,
                          _fcd name,
                          int_f *rank)
@@ -1776,7 +582,7 @@ nh5ltget_dataset_ndims_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -1802,7 +608,7 @@ done:
 */
 
 int_f
-nh5ltfind_dataset_c(hid_t_f *loc_id,
+h5ltfind_dataset_c(hid_t_f *loc_id,
                     size_t_f *namelen,
                     _fcd name)
 {
@@ -1824,7 +630,7 @@ nh5ltfind_dataset_c(hid_t_f *loc_id,
     ret = H5LTfind_dataset(c_loc_id, c_name);
 
     if(c_name!=NULL)
-       free(c_name);
+       HDfree(c_name);
 
     return ret;
 
@@ -1850,7 +656,7 @@ nh5ltfind_dataset_c(hid_t_f *loc_id,
 */
 
 int_f
-nh5ltget_dataset_info_c(hid_t_f *loc_id,
+h5ltget_dataset_info_c(hid_t_f *loc_id,
                         size_t_f *namelen,
                         _fcd name,
                         hsize_t_f *dims,
@@ -1904,7 +710,7 @@ nh5ltget_dataset_info_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
 
     return ret_value;
 }
@@ -1929,7 +735,7 @@ done:
 */
 
 int_f
-nh5ltget_attribute_ndims_c(hid_t_f *loc_id,
+h5ltget_attribute_ndims_c(hid_t_f *loc_id,
                            size_t_f *namelen,
                            _fcd dsetname,
                            size_t_f *attrnamelen,
@@ -1970,9 +776,9 @@ nh5ltget_attribute_ndims_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_attrname!=NULL)
-        free(c_attrname);
+        HDfree(c_attrname);
 
     return ret_value;
 }
@@ -1998,7 +804,7 @@ done:
 */
 
 int_f
-nh5ltget_attribute_info_c(hid_t_f *loc_id,
+h5ltget_attribute_info_c(hid_t_f *loc_id,
                           size_t_f *namelen,
                           _fcd name,
                           size_t_f *attrnamelen,
@@ -2059,9 +865,9 @@ nh5ltget_attribute_info_c(hid_t_f *loc_id,
 
 done:
     if(c_name!=NULL)
-        free(c_name);
+        HDfree(c_name);
     if(c_attrname!=NULL)
-        free(c_attrname);
+        HDfree(c_attrname);
 
 
     return ret_value;
@@ -2087,7 +893,7 @@ done:
 */
 
 int_f
-nh5ltpath_valid_c(hid_t_f *loc_id, 
+h5ltpath_valid_c(hid_t_f *loc_id, 
                   _fcd path, 
                   size_t_f *pathlen, 
                   int_f *check_object_valid_c)
@@ -2113,7 +919,7 @@ nh5ltpath_valid_c(hid_t_f *loc_id,
 
 done:
     if(c_path != NULL)
-      free(c_path);
+      HDfree(c_path);
 
     return (int_f)ret;
 }

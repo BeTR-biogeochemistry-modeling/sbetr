@@ -37,6 +37,7 @@ implicit none
     ! Initialize module data structure
     !
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+    use clm_varcon      , only : spval
     ! !ARGUMENTS:
     class(atm2lnd_type) :: this
     type(bounds_type), intent(in) :: bounds
@@ -51,8 +52,8 @@ implicit none
     begc = bounds%begc; endc= bounds%endc
 
 
-    allocate(this%forc_pbot_downscaled_col(begc:endc));    this%forc_pbot_downscaled_col(:) = nan
-    allocate(this%forc_t_downscaled_col(begc:endc));    this%forc_t_downscaled_col(:) = nan
+    allocate(this%forc_pbot_downscaled_col(begc:endc));    this%forc_pbot_downscaled_col(:) = spval
+    allocate(this%forc_t_downscaled_col(begc:endc));    this%forc_t_downscaled_col(:) = spval
 
   end subroutine InitAllocate
 end module atm2lndType

@@ -19,4 +19,127 @@ contains
     @assertEqual(0.0_r8, heviside(-2.0_r8))
 
   end subroutine test_heavyside
+
+  subroutine test_matrix()
+
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+    use LinearAlgebraMod, only : sparse_gemv
+  implicit none
+    real(r8) :: a(1:4,1:3)
+    real(r8) :: b(1:3)
+    real(r8) :: ans(1:4)
+
+    b(:)=(/0._r8,1._r8,0._r8/)
+    a(1,:)=(/1._r8,2._r8,3._r8/)
+    a(2,:)=(/4._r8,5._r8,6._r8/)
+    a(3,:)=(/7._r8,8._r8,9._r8/)
+    a(4,:)=(/10._r8,11._r8,12._r8/)
+    call sparse_gemv('N', 4, 3, a, 3, b, 4, ans)
+
+    @assertEqual((/2._r8,5._r8,8._r8,11._r8/), ans)
+  end subroutine test_matrix
+
+
+  subroutine test_spm()
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+    use SparseMatMod, only : spm_list_type, sparseMat_type, spm_axpy
+    use SparseMatMod, only : spm_list_init, spm_list_insert, spm_list_to_mat
+  implicit none
+  class(sparseMat_type), pointer :: spm
+  type(spm_list_type), pointer :: spm_list
+  integer :: nelms
+  real(r8) :: x(5),y(5)
+  integer :: errinfo
+
+  call spm_list_init(spm_list, 1._r8, 1, 1, nelms)
+
+  call spm_list_insert(spm_list, -1._r8, 2, 1, nelms)
+
+  call spm_list_insert(spm_list, -3._r8, 4, 1, nelms)
+
+  call spm_list_insert(spm_list, -2._r8, 1, 2, nelms)
+
+  call spm_list_insert(spm_list, 5._r8, 2, 2, nelms)
+
+  call spm_list_insert(spm_list, 4._r8, 3, 3, nelms)
+
+  call spm_list_insert(spm_list, 6._r8, 4, 3, nelms)
+
+  call spm_list_insert(spm_list, 4._r8, 5, 3, nelms)
+
+  call spm_list_insert(spm_list, -4._r8, 1, 4, nelms)
+
+  call spm_list_insert(spm_list, 2._r8, 3, 4, nelms)
+
+  call spm_list_insert(spm_list, 7._r8, 4, 4, nelms)
+
+  call spm_list_insert(spm_list, 8._r8, 2, 5, nelms)
+
+  call spm_list_insert(spm_list, -5._r8, 5, 5, nelms)
+
+  call spm_list_to_mat(spm_list, spm, nelms, 5)
+
+  x=(/1._r8,1._r8,1._r8,1._r8,1._r8/)
+  y=0._r8
+  call spm_axpy(5, 5, 1._r8, x, spm, y, errinfo)
+
+  @assertEqual(0, errinfo)
+  @assertEqual((/-3._r8,3._r8,14._r8,5._r8,3._r8/),y)
+
+  end subroutine test_spm
+
+  subroutine test_cubicroot()
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+  use FindRootMod, only : cubic_newtonraphson
+  implicit none
+  real(r8) :: x1
+  integer :: errinfo
+
+  x1 = cubic_newtonraphson(-6._r8,11._r8,-6._r8,0.1_r8)
+  errinfo=1
+  if(abs(x1-1._r8)<1.e-4_r8)errinfo=0
+  @assertEqual(0,errinfo)
+  end subroutine test_cubicroot
+
+
+  subroutine test_layer_adjust()
+  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use InterpolationMod, only : layer_adjust
+  implicit none
+  real(r8) :: z1(5)
+  real(r8) :: z2(10)
+  real(r8) :: rmat1(5,10)
+  real(r8) :: rmat2(10,5)
+  real(r8) :: rmat11(5,10)
+  real(r8) :: rmat21(10,5)
+  integer :: len1, len2
+
+  rmat21(1,:)=(/0.5_r8, 0._r8,  0._r8,  0._r8,  0._r8/)
+  rmat21(2,:)=(/0.5_r8, 0._r8,  0._r8,  0._r8,  0._r8/)
+  rmat21(3,:)=(/0._r8,  0.5_r8, 0._r8,  0._r8,  0._r8/)
+  rmat21(4,:)=(/0._r8,  0.5_r8, 0._r8,  0._r8,  0._r8/)
+  rmat21(5,:)=(/0._r8,  0._r8,  0.5_r8, 0._r8,  0._r8/)
+  rmat21(6,:)=(/0._r8,  0._r8,  0.5_r8, 0._r8,  0._r8/)
+  rmat21(7,:)=(/0._r8,  0._r8,  0._r8,  0.5_r8, 0._r8/)
+  rmat21(8,:)=(/0._r8,  0._r8,  0._r8,  0.5_r8, 0._r8/)
+  rmat21(9,:)=(/0._r8,  0._r8,  0._r8,  0._r8,  0.5_r8/)
+  rmat21(10,:)=(/0._r8,  0._r8,  0._r8,  0._r8,  0.5_r8/)
+
+  rmat11(1,:)=(/1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(2,:)=(/0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(3,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(4,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8/)
+  rmat11(5,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8/)
+
+  len1=5
+  len2=10
+  z1=(/0.2_r8,0.4_r8,0.6_r8,0.8_r8,1.0_r8/)
+  z2=(/0.1_r8,0.2_r8,0.3_r8,0.4_r8,0.5_r8,0.6_r8,0.7_r8,0.8_r8,0.9_r8,1.0_r8/)
+  call layer_adjust(z1, z2, len1, len2, rmat2)
+  call layer_adjust(z2, z1, len2, len1, rmat1)
+
+  @assertEqual(rmat11,rmat1)
+  @assertEqual(rmat21,rmat2)
+
+  end subroutine test_layer_adjust
 end module test_mathfunc_module

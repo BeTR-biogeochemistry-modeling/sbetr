@@ -6,7 +6,7 @@ module BeTRTracerType
   !
   ! !USES:
   use bshr_assert_mod, only : shr_assert
-  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
   use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod   , only : r8 => shr_kind_r8
   use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
@@ -55,6 +55,7 @@ module BeTRTracerType
    integer :: id_trc_no3x, id_trc_beg_no3x, id_trc_end_no3x                       ! tag for no3 and its related species, no3x(HNO3,NO3(-))
    integer :: id_trc_no2x, id_trc_beg_no2x, id_trc_end_no2x                       ! tag for no2 and its related species, no2x(HNO2,NO2(-))
    integer :: id_trc_dom, id_trc_beg_dom, id_trc_end_dom                         ! tag for generic dissolved organic matter
+   integer :: id_trc_pom, id_trc_beg_pom, id_trc_end_pom                          ! tag for particulate organic matter
    integer :: id_trc_doc, id_trc_beg_doc, id_trc_end_doc                         ! tag for generic dissolved organic carbon, used for testing single carbon pool model
    integer :: id_trc_p_sol, id_trc_beg_p_sol, id_trc_end_p_sol                   ! tag for soluble inorganic P, this includes P in equilibrium adsorption
 
@@ -75,28 +76,31 @@ module BeTRTracerType
 
    integer :: id_trc_o18_o2, id_trc_beg_o18_o2, id_trc_end_o18_o2                                      ! tag for O(18)O and its related species
    integer :: id_trc_o17_o2, id_trc_beg_o17_o2, id_trc_end_o17_o2                                      ! tag for O(17)O and its related species
+   integer :: id_trc_mic_toffset
    integer, pointer :: id_trc_h2o_tags(:)                        !tagged h2o tracers
 
-   logical, pointer :: is_volatile(:)    => null()                       !flag for volatile species,  true/false, (yes/no)
-   logical, pointer :: is_diffusive(:)  => null()
-   logical, pointer :: is_adsorb(:)     => null()                         !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
-   logical, pointer :: is_advective(:)  => null()                         !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
-   logical, pointer :: is_mobile(:)     => null()                         !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
-   logical, pointer :: is_h2o(:)        => null()                         !flag for water isotope
-   logical, pointer :: is_co2tag(:)     => null()                         !tagged co2 tracer?
-   logical, pointer :: is_dom(:)        => null()                         !true if it is a dom tracer, place holder for rtm bgc
-   logical, pointer :: is_isotope(:)   => null()
-   logical, pointer :: is_frozen(:)    => null()                          !true if the tracer could be frozen
-   integer, pointer :: refisoid(:)     => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
-   integer, pointer :: adsorbid(:)     => null()                          !which tracer is adsorbed
-   integer, pointer :: volatileid(:)  => null()
-   integer, pointer :: h2oid(:)    => null()
-   integer, pointer :: adsorbgroupid(:)  => null()
+   logical, pointer :: is_volatile(:)     => null()                       !flag for volatile species,  true/false, (yes/no)
+   logical, pointer :: is_diffusive(:)    => null()
+   logical, pointer :: is_adsorb(:)       => null()                         !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
+   logical, pointer :: is_advective(:)    => null()                         !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
+   logical, pointer :: is_mobile(:)       => null()                         !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
+   logical, pointer :: is_h2o(:)          => null()                         !flag for water isotope
+   logical, pointer :: is_co2tag(:)       => null()                         !tagged co2 tracer?
+   logical, pointer :: is_dom(:)          => null()                         !true if it is a dom tracer, place holder for rtm bgc
+   logical, pointer :: is_isotope(:)      => null()
+   logical, pointer :: is_frozen(:)       => null()                          !true if the tracer could be frozen
+   logical, pointer :: do_mass_balchk(:)  => null()
+   integer, pointer :: refisoid(:)        => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
+   integer, pointer :: adsorbid(:)        => null()                          !which tracer is adsorbed
+   integer, pointer :: volatileid(:)      => null()
+   integer, pointer :: h2oid(:)           => null()
+   integer, pointer :: adsorbgroupid(:)   => null()
    integer, pointer :: adsorb_isotherm(:) => null()
-   integer, pointer :: volatilegroupid(:)  => null()                      !
-   integer, pointer :: groupid(:) => null()
-   integer, pointer :: frozenid(:) => null()
-
+   integer, pointer :: volatilegroupid(:) => null()                      !
+   integer, pointer :: groupid(:)         => null()
+   integer, pointer :: frozenid(:)        => null()
+   real(r8), pointer :: adv_scalar(:)    => null()
+   real(r8), pointer :: difu_scalar(:)    => null()
    logical :: is_tagged_h2o =.false.                             !no tagged h2o run by default
    real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) => null() !reference diffusivity for solid phase tracer, for modeling turbation
    real(r8),pointer :: tracer_solid_passive_diffus_thc_group(:) => null() !threshold diffusivity for solid phase tracer, for modeling turbation
@@ -116,12 +120,12 @@ module BeTRTracerType
      procedure, private :: InitAllocate
      procedure, public  :: is_solidtransport
      procedure, public  :: add_tracer_group
+     procedure, public  :: get_tracername
+     procedure, public  :: get_tracerfamilyname
+     procedure, public  :: disp_betr_tracer
   end type BeTRtracer_type
 
-
-
   contains
-
 
   subroutine Init(this)
 
@@ -135,6 +139,27 @@ module BeTRTracerType
     call this%InitAllocate()
     this%debug = .false.
   end subroutine Init
+!--------------------------------------------------------------------------------
+  function get_tracername(this, trcid) result(name)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
+  integer, intent(in) :: trcid
+
+  character(len=betr_var_name_length) :: name
+
+  name = this%tracernames(trcid)
+  end function get_tracername
+!--------------------------------------------------------------------------------
+  function get_tracerfamilyname(this, trcid) result(name)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
+  integer, intent(in) :: trcid
+
+  character(len=betr_var_name_length) :: name
+
+  name = this%tracerfamilyname(trcid)
+  end function get_tracerfamilyname
+
 !--------------------------------------------------------------------------------
   subroutine init_scalars(this)
 
@@ -158,41 +183,42 @@ module BeTRTracerType
   this%nfrozen_tracers              = 0
   this%nh2o_tracers                 = 0      ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
 
-  this%id_trc_ch4          = 0; this%id_trc_beg_ch4 = 0;this%id_trc_end_ch4 = 0     ! tag for methane
-  this%id_trc_o2           = 0; this%id_trc_beg_o2 = 0; this%id_trc_end_o2 = 0      ! tag for co2
-  this%id_trc_n2           = 0; this%id_trc_beg_n2 = 0; this%id_trc_end_n2 = 0      ! tag for n2
-  this%id_trc_no            = 0; this%id_trc_beg_no = 0; this%id_trc_end_no = 0      ! tag for no
-  this%id_trc_n2o                   = 0; this%id_trc_beg_n2o= 0; this%id_trc_end_n2o= 0      ! tag for n2o
-  this%id_trc_ar                    = 0; this%id_trc_beg_ar = 0      ! tag for ar
-  this%id_trc_air_co2x              = 0      ! tag for atmospheric co2
-  this%id_trc_arrt_co2x             = 0      ! tag for autotrophic co2
-  this%id_trc_hrsoi_co2x            = 0      ! tag for heterotrophic co2
-
-  this%id_trc_co2x                  = 0; this%id_trc_beg_co2x = 0; this%id_trc_end_co2x = 0      ! tag for co2 and its related species, co2x(CO2, H2CO3, HCO3(-), CO3(2-)),
-  this%id_trc_nh3x                  = 0; this%id_trc_beg_nh3x = 0; this%id_trc_end_nh3x = 0      ! tag for nh3 and its related species, nh3x(NH3, NH4OH,NH4(+))
-  this%id_trc_no3x                  = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = 0      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
-  this%id_trc_no2x                  = 0; this%id_trc_beg_no2x = 0; this%id_trc_end_no2x = 0       ! tag for no2 and its related species, no2x(HNO2,NO2(-))
-  this%id_trc_dom                   = 0; this%id_trc_beg_dom = 0;  this%id_trc_end_dom = 0      ! tag for generic dissolved organic matter
-  this%id_trc_doc                   = 0; this%id_trc_beg_doc = 0; this%id_trc_end_doc = 0      ! tag for generic dissolved organic matter
-  this%id_trc_p_sol                 = 0; this%id_trc_beg_p_sol = 0; this%id_trc_end_p_sol = 0
-  this%id_trc_o18_h2o               = 0; this%id_trc_beg_o18_h2o=0; this%id_trc_end_o18_h2o=0      ! tag for H2O(18)
-  this%id_trc_o17_h2o               = 0; this%id_trc_beg_o17_h2o=0; this%id_trc_end_o17_h2o=0      ! tag for H2O(17)
-  this%id_trc_d_h2o                 = 0; this%id_trc_beg_d_h2o=0; this%id_trc_end_d_h2o=0      ! tag for DHO
-  this%id_trc_c13_co2x              = 0; this%id_trc_beg_c13_co2x = 0; this%id_trc_end_c13_co2x = 0      ! tag for C(13)O2 and its related species
-  this%id_trc_c14_co2x              = 0; this%id_trc_beg_c14_co2x = 0; this%id_trc_end_c14_co2x = 0      ! tag for C(14)O2 and its related species
-  this%id_trc_o18_co2x              = 0; this%id_trc_beg_o18_co2x = 0; this%id_trc_end_o18_co2x = 0       ! tag for O(18)CO and its related species
-  this%id_trc_o17_co2x              = 0; this%id_trc_beg_o17_co2x = 0; this%id_trc_end_o17_co2x = 0      ! tag for O(17)CO and its related species
-  this%id_trc_o18_h2o_ice           = 0      ! tag for H2O(18) in ice
-  this%id_trc_d_h2o_ice             = 0      ! tag for HDO in ice
-  this%id_trc_o18_o2                = 0; this%id_trc_beg_o18_o2 = 0; this%id_trc_end_o18_o2 = 0      ! tag for O(18)O and its related species
-  this%id_trc_o17_o2                = 0; this%id_trc_beg_o17_o2 = 0; this%id_trc_end_o17_o2 =0      ! tag for O(17)O and its related species
+  this%id_trc_ch4            = 0; this%id_trc_beg_ch4 = 0;this%id_trc_end_ch4 = -1     ! tag for methane
+  this%id_trc_o2             = 0; this%id_trc_beg_o2 = 0; this%id_trc_end_o2  = -1      ! tag for co2
+  this%id_trc_n2             = 0; this%id_trc_beg_n2 = 0; this%id_trc_end_n2  = -1      ! tag for n2
+  this%id_trc_no             = 0; this%id_trc_beg_no = 0; this%id_trc_end_no  = -1      ! tag for no
+  this%id_trc_n2o            = 0; this%id_trc_beg_n2o= 0; this%id_trc_end_n2o = -1      ! tag for n2o
+  this%id_trc_ar             = 0; this%id_trc_beg_ar = 0; this%id_trc_end_ar  = -1      ! tag for ar
+  this%id_trc_air_co2x       = 0      ! tag for atmospheric co2
+  this%id_trc_arrt_co2x      = 0      ! tag for autotrophic co2
+  this%id_trc_hrsoi_co2x     = 0      ! tag for heterotrophic co2
+  this%id_trc_minp           = 0; this%id_trc_beg_minp = 0; this%id_trc_end_minp = -1
+  this%id_trc_co2x           = 0; this%id_trc_beg_co2x = 0; this%id_trc_end_co2x = -1      ! tag for co2 and its related species, co2x(CO2, H2CO3, HCO3(-), CO3(2-)),
+  this%id_trc_nh3x           = 0; this%id_trc_beg_nh3x = 0; this%id_trc_end_nh3x = -1      ! tag for nh3 and its related species, nh3x(NH3, NH4OH,NH4(+))
+  this%id_trc_no3x           = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = -1      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
+  this%id_trc_no2x           = 0; this%id_trc_beg_no2x = 0; this%id_trc_end_no2x = -1      ! tag for no2 and its related species, no2x(HNO2,NO2(-))
+  this%id_trc_dom            = 0; this%id_trc_beg_dom  = 0;  this%id_trc_end_dom =  -1       ! tag for generic dissolved organic matter
+  this%id_trc_pom            = 0; this%id_trc_beg_pom  = 0;  this%id_trc_end_pom = -1       ! tag for particulate organic matter
+  this%id_trc_doc            = 0; this%id_trc_beg_doc  = 0; this%id_trc_end_doc = -1        ! tag for generic dissolved organic matter
+  this%id_trc_p_sol          = 0; this%id_trc_beg_p_sol = 0; this%id_trc_end_p_sol = -1
+  this%id_trc_o18_h2o        = 0; this%id_trc_beg_o18_h2o=0; this%id_trc_end_o18_h2o=-1      ! tag for H2O(18)
+  this%id_trc_o17_h2o        = 0; this%id_trc_beg_o17_h2o=0; this%id_trc_end_o17_h2o=-1      ! tag for H2O(17)
+  this%id_trc_d_h2o          = 0; this%id_trc_beg_d_h2o=0; this%id_trc_end_d_h2o=0      ! tag for DHO
+  this%id_trc_c13_co2x       = 0; this%id_trc_beg_c13_co2x = 0; this%id_trc_end_c13_co2x = 0      ! tag for C(13)O2 and its related species
+  this%id_trc_c14_co2x       = 0; this%id_trc_beg_c14_co2x = 0; this%id_trc_end_c14_co2x = 0      ! tag for C(14)O2 and its related species
+  this%id_trc_o18_co2x       = 0; this%id_trc_beg_o18_co2x = 0; this%id_trc_end_o18_co2x = 0       ! tag for O(18)CO and its related species
+  this%id_trc_o17_co2x       = 0; this%id_trc_beg_o17_co2x = 0; this%id_trc_end_o17_co2x = 0      ! tag for O(17)CO and its related species
+  this%id_trc_o18_h2o_ice    = 0      ! tag for H2O(18) in ice
+  this%id_trc_d_h2o_ice      = 0      ! tag for HDO in ice
+  this%id_trc_o18_o2         = 0; this%id_trc_beg_o18_o2 = 0; this%id_trc_end_o18_o2 = 0      ! tag for O(18)O and its related species
+  this%id_trc_o17_o2         = 0; this%id_trc_beg_o17_o2 = 0; this%id_trc_end_o17_o2 =0      ! tag for O(17)O and its related species
 
   this%id_trc_litr = 0; this%id_trc_beg_litr=0; this%id_trc_end_litr=0
   this%id_trc_wood = 0; this%id_trc_beg_wood=0; this%id_trc_end_wood=0
   this%id_trc_som = 0; this%id_trc_beg_som = 0; this%id_trc_end_som = 0
   this%id_trc_blk_h2o=0; this%id_trc_beg_blk_h2o=0; this%id_trc_end_blk_h2o=0
   this%id_trc_Bm = 0; this%id_trc_beg_Bm = 0; this%id_trc_end_Bm = 0
-
+  this%id_trc_mic_toffset = 0
   this%betr_simname                 = ''
   end subroutine init_scalars
 
@@ -207,34 +233,38 @@ module BeTRTracerType
   class(BeTRtracer_type), intent(inout) :: this
   integer, parameter :: nanid=-1
 
-  allocate(this%is_volatile        (this%ntracers));    this%is_volatile(:)     = .false.
-  allocate(this%is_adsorb          (this%ntracers));    this%is_adsorb(:)       = .false.
-  allocate(this%is_advective       (this%ntracers));             this%is_advective(:)    = .false.
-  allocate(this%is_diffusive       (this%ntracers));             this%is_diffusive(:)    = .true.
-  allocate(this%is_mobile          (this%ntracers));             this%is_mobile(:)       = .false.
-  allocate(this%is_h2o             (this%ntracers));    this%is_h2o(:)          = .false.
-  allocate(this%is_co2tag          (this%ntracers));    this%is_co2tag(:)       = .false.
-  allocate(this%is_dom             (this%ntracers));    this%is_dom(:)          = .false.
-  allocate(this%is_isotope         (this%ntracers));    this%is_isotope(:)      = .false.
-  allocate(this%is_frozen          (this%ntracers));    this%is_frozen(:)       = .false.
-  allocate(this%adsorbgroupid      (this%ntracers));    this%adsorbgroupid(:)   = nanid
-  allocate(this%adsorb_isotherm    (this%ntracers));    this%adsorb_isotherm(:) = nanid
-  allocate(this%adsorbid           (this%ntracers));    this%adsorbid(:)        = nanid
-
-  allocate(this%volatileid         (this%ntracers));    this%volatileid(:)      = nanid
-  allocate(this%volatilegroupid    (this%ntracers));    this%volatilegroupid(:) = nanid
-  allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
-  allocate(this%frozenid           (this%ntracers));    this%frozenid(:)        = nanid
-  allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
-  allocate(this%tracerfamilyname   (this%ntracers));             this%tracerfamilyname(:)= ''
-  allocate(this%units              (this%ntracers));             this%units(:)           = 'mol m-3'
+  allocate(this%is_volatile        (this%ntracers));      this%is_volatile(:)     = .false.
+  allocate(this%is_adsorb          (this%ntracers));      this%is_adsorb(:)       = .false.
+  allocate(this%is_advective       (this%ntracers));      this%is_advective(:)    = .false.
+  allocate(this%is_diffusive       (this%ntracers));      this%is_diffusive(:)    = .true.
+  allocate(this%is_mobile          (this%ntracers));      this%is_mobile(:)       = .false.
+  allocate(this%is_h2o             (this%ntracers));      this%is_h2o(:)          = .false.
+  allocate(this%is_co2tag          (this%ntracers));      this%is_co2tag(:)       = .false.
+  allocate(this%is_dom             (this%ntracers));      this%is_dom(:)          = .false.
+  allocate(this%is_isotope         (this%ntracers));      this%is_isotope(:)      = .false.
+  allocate(this%is_frozen          (this%ntracers));      this%is_frozen(:)       = .false.
+  allocate(this%adsorbgroupid      (this%ntracers));      this%adsorbgroupid(:)   = nanid
+  allocate(this%adsorb_isotherm    (this%ntracers));      this%adsorb_isotherm(:) = nanid
+  allocate(this%adsorbid           (this%ntracers));      this%adsorbid(:)        = nanid
+  allocate(this%volatileid         (this%ntracers));      this%volatileid(:)      = nanid
+  allocate(this%volatilegroupid    (this%ntracers));      this%volatilegroupid(:) = nanid
+  if(this%nh2o_tracers>0)then
+    allocate(this%h2oid              (this%nh2o_tracers));  this%h2oid(:)           = nanid
+  endif
+  allocate(this%frozenid           (this%ntracers));      this%frozenid(:)        = nanid
+  allocate(this%tracernames        (this%ntracers));      this%tracernames(:)     = ''
+  allocate(this%tracerfamilyname   (this%ntracers));      this%tracerfamilyname(:)= ''
+  allocate(this%units              (this%ntracers));      this%units(:)           = 'mol m-3'
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
+  allocate(this%adv_scalar        (this%ntracer_groups));      this%adv_scalar(:)     = 1._r8
+  allocate(this%difu_scalar        (this%ntracer_groups));      this%difu_scalar(:)     = 1._r8
 
+  allocate(this%do_mass_balchk     (this%ntracers));      this%do_mass_balchk(:) = .true.
   allocate(this%tracer_solid_passive_diffus_scal_group(this%nsolid_passive_tracer_groups));
   this%tracer_solid_passive_diffus_scal_group(:) = 1._r8
 
   allocate(this%tracer_solid_passive_diffus_thc_group (this%nsolid_passive_tracer_groups));
-  this%tracer_solid_passive_diffus_thc_group(:) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
+  this%tracer_solid_passive_diffus_thc_group(:) = 1.e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
 
   allocate(this%tracer_group_memid(this%ntracer_groups, this%nmem_max));
   this%tracer_group_memid(:,:) = nanid
@@ -251,8 +281,8 @@ module BeTRTracerType
 
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
-   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, trc_sorpisotherm, &
-   is_trc_frozen, trc_frozenid, trc_family_name)
+   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, do_mass_balchk, &
+   trc_sorpisotherm, is_trc_dom, is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -275,7 +305,9 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   logical ,optional  , intent(in) :: is_trc_adsorb
   integer ,optional  , intent(in) :: trc_adsorbid
   integer ,optional  , intent(in) :: trc_adsorbgroupid
+  logical, optional  , intent(in) :: do_mass_balchk
   character(len=*), optional, intent(in) :: trc_sorpisotherm
+  logical, optional  , intent(in) :: is_trc_dom
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
   character(len=*),optional,intent(in) :: trc_family_name
@@ -294,6 +326,9 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
   this%is_advective     (trc_id)    = is_trc_advective
 
+  if(present(do_mass_balchk))then
+    this%do_mass_balchk(trc_id)=do_mass_balchk
+  endif
   if(present(is_trc_diffusive)) then
     this%is_diffusive (trc_id) = is_trc_diffusive
   endif
@@ -355,7 +390,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
       endif
     endif
   endif
-
+  if(present(is_trc_dom))this%is_dom(trc_id)=is_trc_dom
   if(present(is_trc_frozen))then
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then
@@ -386,7 +421,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   !--------------------------------------------------------------------------------
   subroutine  add_tracer_group(this, trc_grp_cnt, mem, &
      trc_cnt, trc_grp, trc_grp_beg, trc_grp_end, is_trc_gw, is_trc_volatile,&
-     is_trc_passive)
+     is_trc_passive,is_trc_adsorb)
   implicit none
   class(BeTRtracer_type), intent(inout) :: this
   integer, intent(in)  :: trc_grp_cnt
@@ -398,6 +433,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   logical, optional, intent(in)  :: is_trc_gw
   logical, optional, intent(in)  :: is_trc_volatile
   logical, optional, intent(in)  :: is_trc_passive
+  logical, optional, intent(in)  :: is_trc_adsorb
 
   trc_grp = trc_grp_cnt
   this%ntracers = this%ntracers + mem
@@ -418,12 +454,68 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   if(present(is_trc_passive))then
     if(is_trc_passive)then
       this%nsolid_passive_tracer_groups = this%nsolid_passive_tracer_groups + 1
-      this%nsolid_passive_tracers = this%nsolid_passive_tracers + mem
+    endif
+  endif
+
+  if(present(is_trc_adsorb))then
+    if(is_trc_adsorb)then
+      this%nsolid_equil_tracer_groups = this%nsolid_equil_tracer_groups + 1
     endif
   endif
   trc_grp_beg = trc_cnt + 1
   trc_grp_end = trc_cnt + mem
   trc_cnt = trc_cnt + mem
   end subroutine add_tracer_group
+  !--------------------------------------------------------------------------------
+  subroutine disp_betr_tracer(this)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
 
+   call disp('n2'     ,this%id_trc_n2       , this%id_trc_beg_n2       , this%id_trc_end_n2)
+   call disp('o2'     ,this%id_trc_o2       , this%id_trc_beg_o2       , this%id_trc_end_o2)
+   call disp('ar'     ,this%id_trc_ar       , this%id_trc_beg_ar       ,this%id_trc_end_ar)
+   call disp('co2'    ,this%id_trc_co2x     , this%id_trc_beg_co2x     , this%id_trc_end_co2x)
+   call disp('ch4'    ,this%id_trc_ch4      , this%id_trc_beg_ch4      , this%id_trc_end_ch4)
+   call disp('Bm'     ,this%id_trc_Bm       , this%id_trc_beg_Bm       , this%id_trc_end_Bm)
+   call disp('no'     ,this%id_trc_no       , this%id_trc_beg_no       , this%id_trc_end_no)
+   call disp('n2o'    ,this%id_trc_n2o      , this%id_trc_beg_n2o      , this%id_trc_end_n2o)
+   call disp('nh3'    ,this%id_trc_nh3x     , this%id_trc_beg_nh3x     , this%id_trc_end_nh3x)
+   call disp('no3'    ,this%id_trc_no3x     , this%id_trc_beg_no3x     , this%id_trc_end_no3x)
+   call disp('no2'    ,this%id_trc_no2x     , this%id_trc_beg_no2x     , this%id_trc_end_no2x)
+   call disp('dom'    ,this%id_trc_dom      , this%id_trc_beg_dom      , this%id_trc_end_dom)
+   call disp('pom'    ,this%id_trc_pom      , this%id_trc_beg_pom      , this%id_trc_end_pom)
+   call disp('doc'    ,this%id_trc_doc      , this%id_trc_beg_doc      , this%id_trc_end_doc)
+   call disp('p_sol'  ,this%id_trc_p_sol    , this%id_trc_beg_p_sol    , this%id_trc_end_p_sol)
+   call disp('h2o'    ,this%id_trc_blk_h2o  , this%id_trc_beg_blk_h2o  , this%id_trc_end_blk_h2o)
+   call disp('o18_h2o',this%id_trc_o18_h2o  , this%id_trc_beg_o18_h2o  , this%id_trc_end_o18_h2o)
+   call disp('o17_h2o',this%id_trc_o17_h2o  , this%id_trc_beg_o17_h2o  , this%id_trc_end_o17_h2o)
+   call disp('d_h2o'  ,this%id_trc_d_h2o    , this%id_trc_beg_d_h2o    , this%id_trc_end_d_h2o)
+   call disp('c13_co2',this%id_trc_c13_co2x , this%id_trc_beg_c13_co2x , this%id_trc_end_c13_co2x)
+   call disp('c14_co2',this%id_trc_c14_co2x , this%id_trc_beg_c14_co2x , this%id_trc_end_c14_co2x)
+   call disp('o18_co2',this%id_trc_o18_co2x , this%id_trc_beg_o18_co2x , this%id_trc_end_o18_co2x)
+   call disp('o17_co2',this%id_trc_o17_co2x , this%id_trc_beg_o17_co2x , this%id_trc_end_o17_co2x)
+   call disp('litr'   ,this%id_trc_litr     , this%id_trc_beg_litr     , this%id_trc_end_litr)
+   call disp('wood'   ,this%id_trc_wood     , this%id_trc_beg_wood     , this%id_trc_end_wood)
+   call disp('som'    ,this%id_trc_som      , this%id_trc_beg_som      , this%id_trc_end_som)
+   call disp('minp'   ,this%id_trc_minp     , this%id_trc_beg_minp     , this%id_trc_end_minp)
+   call disp('o18_o2' ,this%id_trc_o18_o2   , this%id_trc_beg_o18_o2   , this%id_trc_end_o18_o2)
+   call disp('o17_o2' ,this%id_trc_o17_o2   , this%id_trc_beg_o17_o2   , this%id_trc_end_o17_o2)
+   print*,'ntracers=',this%ntracers
+   print*,'ntracer_groups=',this%ntracer_groups
+   contains
+     subroutine disp(tag,grpid, memid_beg, memid_end)
+     implicit none
+     character(len=*), intent(in) :: tag
+     integer, intent(in) :: grpid, memid_beg, memid_end
+     integer :: jj
+     if(grpid>0)then
+       write(*, '(I3,X,A16,X,A6,X,I3)')grpid, trim(tag),' group'
+       do jj = memid_beg, memid_end
+         write(*,'(I3,X,A16,X,A8)')jj,this%tracernames(jj), this%tracerfamilyname(jj)
+       enddo
+       print*,'------------------------------------------------'
+     endif
+
+     end subroutine disp
+  end subroutine disp_betr_tracer
 end module BeTRTracerType

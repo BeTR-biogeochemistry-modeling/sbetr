@@ -1,6 +1,6 @@
 /****h* H5f90kit/H5f90kit
  * PURPOSE
- *   Routines from HDF4 to deal with C-FORTRAN issues:
+ *  Routines from HDF4 to deal with C-FORTRAN issues:
  *
  *   HD5f2cstring   -- convert a Fortran string to a C string
  *   HD5packFstring -- convert a C string into a Fortran string
@@ -13,12 +13,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  ******
@@ -31,16 +29,16 @@
 /****if* H5f90kit/HDf2cstring
  * NAME
  *   HD5f2cstring -- convert a Fortran string to a C string
- *   char * HDf2cstring(fdesc, len)
+ *  char * HDf2cstring(fdesc, len)
  * INPUTS
  *   _fcd  fdesc;    IN: Fortran string descriptor
- *   int  len;       IN: length of Fortran string
+ *  int  len;       IN: length of Fortran string
  * RETURNS
- *   Pointer to the C string if success, else NULL
+ *  Pointer to the C string if success, else NULL
  * PURPOSE
- *   Chop off trailing blanks off of a Fortran string and
- *   move it into a newly allocated C string.  It is up
- *   to the user to free this string.
+ *  Chop off trailing blanks off of a Fortran string and
+ *  move it into a newly allocated C string.  It is up
+ *  to the user to free this string.
  * SOURCE
  */
 char *
@@ -72,21 +70,21 @@ HD5f2cstring(_fcd fdesc, size_t len)
 /****if* H5f90kit/HD5packFstring
  * NAME
  *   HD5packFstring -- convert a C string into a Fortran string
- *   int HD5packFstring(src, dest, len)
+ *  int HD5packFstring(src, dest, len)
  * INPUTS
- *   char * src;         IN:  source string
- *   int   len;          IN:  length of string
+ *  char * src;         IN:  source string
+ *  int   len;          IN:  length of string
  * OUTPUTS
- *   char * dest;       OUT: destination
+ *  char * dest;       OUT: destination
  * RETURNS
  *   SUCCEED / FAIL
  * PURPOSE
- *   given a NULL terminated C string 'src' convert it to
- *   a space padded Fortran string 'dest' of length 'len'
+ *  given a NULL terminated C string 'src' convert it to
+ *  a space padded Fortran string 'dest' of length 'len'
  *
- *   This is very similar to HDc2fstr except that function does
- *   it in place and this one copies.  We should probably only
- *   support one of these.
+ *  This is very similar to HDc2fstr except that function does
+ *  it in place and this one copies.  We should probably only
+ *  support one of these.
  * SOURCE
  */
 void

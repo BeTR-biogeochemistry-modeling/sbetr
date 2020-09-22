@@ -7,36 +7,47 @@ module CNCarbonFluxType
 implicit none
 
   type, public :: carbonflux_type
-    real(r8), pointer :: rr_col                                    (:)   => null()  ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
-    real(r8), pointer :: rr_patch                                  (:)  => null()   ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
-    real(r8), pointer :: annsum_npp_patch                          (:) => null() ! patch annual sum of NPP (gC/m2/yr)
-    real(r8), pointer :: agnpp_patch                               (:)  => null()   ! (gC/m2/s) aboveground NPP
-    real(r8), pointer :: bgnpp_patch                               (:)  => null()   ! (gC/m2/s) belowground NPP
-    real(r8), pointer :: hr_col                                    (:)=> null()
-    real(r8), pointer :: hr_vr_col                                 (:,:) => null()
-    real(r8), pointer :: phenology_c_to_litr_met_c_col             (:,:)=> null()
-    real(r8), pointer :: phenology_c_to_litr_cel_c_col             (:,:)=> null()
-    real(r8), pointer :: phenology_c_to_litr_lig_c_col             (:,:)=> null()
-    real(r8), pointer :: dwt_livecrootc_to_cwdc_col                (:,:)=> null()
-    real(r8), pointer :: m_decomp_cpools_to_fire_vr_col            (:,:,:)=> null()
-    real(r8), pointer :: dwt_deadcrootc_to_cwdc_col                (:,:)=> null()
-    real(r8), pointer :: dwt_frootc_to_litr_lig_c_col              (:,:)=> null()
-    real(r8), pointer :: dwt_frootc_to_litr_cel_c_col              (:,:)=> null()
-    real(r8), pointer :: dwt_frootc_to_litr_met_c_col              (:,:)=> null()
-    real(r8), pointer :: gap_mortality_c_to_litr_met_c_col         (:,:)=> null()
-    real(r8), pointer :: gap_mortality_c_to_litr_cel_c_col         (:,:)=> null()
-    real(r8), pointer :: gap_mortality_c_to_litr_lig_c_col         (:,:)=> null()
-    real(r8), pointer :: gap_mortality_c_to_cwdc_col               (:,:)=> null()
-    real(r8), pointer :: harvest_c_to_litr_met_c_col               (:,:)=> null()
-    real(r8), pointer :: harvest_c_to_litr_cel_c_col               (:,:)=> null()
-    real(r8), pointer :: harvest_c_to_litr_lig_c_col               (:,:)=> null()
-    real(r8), pointer :: harvest_c_to_cwdc_col                     (:,:)=> null()
-    real(r8), pointer :: m_c_to_litr_met_fire_col                  (:,:)=> null()
-    real(r8), pointer :: m_c_to_litr_cel_fire_col                  (:,:)=> null()
-    real(r8), pointer :: m_c_to_litr_lig_fire_col                  (:,:)=> null()
-    real(r8), pointer :: fire_mortality_c_to_cwdc_col              (:,:)=> null()
-    real(r8), pointer :: fire_decomp_closs_col                     (:) => null()
-    real(r8), pointer :: som_c_leached_col                         (:) => null()
+    real(r8), pointer :: rr                                    (:)   => null()  ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
+    real(r8), pointer :: hr                                    (:)=> null()
+    real(r8), pointer :: hr_vr                                 (:,:) => null()
+    real(r8), pointer :: phenology_c_to_litr_met_c             (:,:)=> null()
+    real(r8), pointer :: phenology_c_to_litr_cel_c             (:,:)=> null()
+    real(r8), pointer :: phenology_c_to_litr_lig_c             (:,:)=> null()
+    real(r8), pointer :: dwt_livecrootc_to_cwdc                (:,:)=> null()
+    real(r8), pointer :: m_decomp_cpools_to_fire_vr            (:,:,:)=> null()
+    real(r8), pointer :: dwt_deadcrootc_to_cwdc                (:,:)=> null()
+    real(r8), pointer :: dwt_frootc_to_litr_lig_c              (:,:)=> null()
+    real(r8), pointer :: dwt_frootc_to_litr_cel_c              (:,:)=> null()
+    real(r8), pointer :: dwt_frootc_to_litr_met_c              (:,:)=> null()
+    real(r8), pointer :: gap_mortality_c_to_litr_met_c         (:,:)=> null()
+    real(r8), pointer :: gap_mortality_c_to_litr_cel_c         (:,:)=> null()
+    real(r8), pointer :: gap_mortality_c_to_litr_lig_c         (:,:)=> null()
+    real(r8), pointer :: gap_mortality_c_to_cwdc               (:,:)=> null()
+    real(r8), pointer :: harvest_c_to_litr_met_c               (:,:)=> null()
+    real(r8), pointer :: harvest_c_to_litr_cel_c               (:,:)=> null()
+    real(r8), pointer :: harvest_c_to_litr_lig_c               (:,:)=> null()
+    real(r8), pointer :: harvest_c_to_cwdc                     (:,:)=> null()
+    real(r8), pointer :: m_c_to_litr_met_fire                  (:,:)=> null()
+    real(r8), pointer :: m_c_to_litr_cel_fire                  (:,:)=> null()
+    real(r8), pointer :: m_c_to_litr_lig_fire                  (:,:)=> null()
+    real(r8), pointer :: fire_mortality_c_to_cwdc              (:,:)=> null()
+    real(r8), pointer :: fire_decomp_closs                     (:) => null()
+    real(r8), pointer :: som_c_leached                         (:) => null()
+    real(r8), pointer :: som_c_runoff                          (:) => null()
+    real(r8), pointer :: cflx_input_litr_met_vr              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_cel_vr              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_lig_vr              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_cwd_vr              (:,:) => null()
+    real(r8), pointer :: co2_soi_flx                         (:) => null()
+    real(r8), pointer :: decomp_k                            (:,:,:) => null()
+    real(r8), pointer :: t_scalar(:,:) => null()
+    real(r8), pointer :: w_scalar(:,:) => null()
+    real(r8), pointer :: rr_vr(:,:) => null()
+    real(r8), pointer :: phr_vr(:,:)=> null()
+    real(r8), pointer :: somhr(:) => null()
+    real(r8), pointer :: lithr(:)=> null()
+    real(r8), pointer :: cwdc_hr(:)=> null()
+    real(r8), pointer :: o_scalar(:,:)=> null()
   contains
 
     procedure, public  :: Init
@@ -78,37 +89,47 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%rr_col                  (begc:endc))                  ; this%rr_col                    (:)  =nan
-    allocate(this%rr_patch                (begp:endp))                  ; this%rr_patch                    (:)  =nan
 
-    allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = nan
-    allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
-    allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan
-    allocate(this%hr_col (begc:endc)); this%hr_col(:) = nan
+    allocate(this%rr                  (begc:endc)) ; this%rr      (:)  = nan
+    allocate(this%hr (begc:endc)); this%hr(:) = spval
 
-    allocate(this%phenology_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%phenology_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%dwt_livecrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootc_to_cwdc_col(:,:) = nan
-    allocate(this%m_decomp_cpools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_cpools_to_fire_vr_col(:,:,:)=nan
-    allocate(this%dwt_deadcrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootc_to_cwdc_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_lig_c_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_cel_c_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_met_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_cwdc_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%harvest_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_cwdc_col(:,:) = nan
-    allocate(this%m_c_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_met_fire_col(:,:) = nan
-    allocate(this%m_c_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_cel_fire_col(:,:) = nan
-    allocate(this%m_c_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire_col(:,:) = nan
-    allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = nan
-    allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = nan
-
+    if(nlevdecomp_full>0)then
+      allocate(this%phenology_c_to_litr_met_c(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_met_c(:,:) = spval
+      allocate(this%phenology_c_to_litr_cel_c(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_cel_c(:,:) = spval
+      allocate(this%dwt_livecrootc_to_cwdc(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootc_to_cwdc(:,:) = spval
+      allocate(this%m_decomp_cpools_to_fire_vr(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_cpools_to_fire_vr(:,:,:)=nan
+      allocate(this%dwt_deadcrootc_to_cwdc(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootc_to_cwdc(:,:) = spval
+      allocate(this%dwt_frootc_to_litr_lig_c(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_lig_c(:,:) = spval
+      allocate(this%dwt_frootc_to_litr_cel_c(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_cel_c(:,:) = spval
+      allocate(this%dwt_frootc_to_litr_met_c(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_met_c(:,:) = spval
+      allocate(this%gap_mortality_c_to_litr_met_c(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_met_c(:,:) = spval
+      allocate(this%gap_mortality_c_to_litr_cel_c(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_cel_c(:,:) = spval
+      allocate(this%gap_mortality_c_to_litr_lig_c(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_lig_c(:,:) = spval
+      allocate(this%gap_mortality_c_to_cwdc(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_cwdc(:,:) = spval
+      allocate(this%harvest_c_to_litr_met_c(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_met_c(:,:) = spval
+      allocate(this%harvest_c_to_litr_cel_c(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_cel_c(:,:) = spval
+      allocate(this%harvest_c_to_litr_lig_c(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_lig_c(:,:) = spval
+      allocate(this%harvest_c_to_cwdc(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_cwdc(:,:) = spval
+      allocate(this%m_c_to_litr_met_fire(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_met_fire(:,:) = spval
+      allocate(this%m_c_to_litr_cel_fire(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_cel_fire(:,:) = spval
+      allocate(this%m_c_to_litr_lig_fire(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire(:,:) = spval
+      allocate(this%fire_mortality_c_to_cwdc (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc (:,:) = spval
+      allocate(this%phenology_c_to_litr_lig_c(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c(:,:) = spval
+      allocate(this%rr_vr(begc:endc,1:nlevdecomp_full)); this%rr_vr(:,:) = spval
+      allocate(this%cflx_input_litr_met_vr(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_met_vr(:,:) = spval
+      allocate(this%cflx_input_litr_cel_vr(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr(:,:) = spval
+      allocate(this%cflx_input_litr_lig_vr(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr(:,:) = spval
+      allocate(this%cflx_input_litr_cwd_vr(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr(:,:) = spval
+      allocate(this%phr_vr(begc:endc,1:nlevdecomp_full)); this%phr_vr(:,:)=spval
+      allocate(this%o_scalar(begc:endc,1:nlevdecomp_full)); this%o_scalar(:,:)=spval
+    endif
+    allocate(this%som_c_leached(begc:endc)); this%som_c_leached(:) = spval
+    allocate(this%fire_decomp_closs(begc:endc)); this%fire_decomp_closs(:) = spval
+    allocate(this%som_c_runoff(begc:endc)); this%som_c_runoff(:) = spval
+    allocate(this%co2_soi_flx(begc:endc)); this%co2_soi_flx(:) = spval
+    allocate(this%somhr(begc:endc)); this%somhr(:) = spval
+    allocate(this%lithr(begc:endc)); this%lithr(:) = spval
+    allocate(this%cwdc_hr(begc:endc)); this%cwdc_hr(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -140,27 +161,32 @@ contains
     integer               :: begg, endg
 
 
-    this%phenology_c_to_litr_met_c_col(:,:) = 0._r8
-    this%phenology_c_to_litr_cel_c_col(:,:) = 0._r8
-    this%dwt_livecrootc_to_cwdc_col(:,:) = 0._r8
-    this%m_decomp_cpools_to_fire_vr_col(:,:,:)= 0._r8
-    this%dwt_deadcrootc_to_cwdc_col(:,:) = 0._r8
-    this%dwt_frootc_to_litr_lig_c_col(:,:) = 0._r8
-    this%dwt_frootc_to_litr_cel_c_col(:,:) = 0._r8
-    this%dwt_frootc_to_litr_met_c_col(:,:) = 0._r8
-    this%gap_mortality_c_to_litr_met_c_col(:,:) = 0._r8
-    this%gap_mortality_c_to_litr_cel_c_col(:,:) = 0._r8
-    this%gap_mortality_c_to_litr_lig_c_col(:,:) = 0._r8
-    this%gap_mortality_c_to_cwdc_col(:,:) = 0._r8
-    this%harvest_c_to_litr_met_c_col(:,:) = 0._r8
-    this%harvest_c_to_litr_cel_c_col(:,:) = 0._r8
-    this%harvest_c_to_litr_lig_c_col(:,:) = 0._r8
-    this%harvest_c_to_cwdc_col(:,:) = 0._r8
-    this%m_c_to_litr_met_fire_col(:,:) = 0._r8
-    this%m_c_to_litr_cel_fire_col(:,:) = 0._r8
-    this%m_c_to_litr_lig_fire_col(:,:) = 0._r8
-    this%fire_mortality_c_to_cwdc_col (:,:) = 0._r8
-    this%phenology_c_to_litr_lig_c_col(:,:) = 0._r8
+    this%phenology_c_to_litr_met_c(:,:) = 0._r8
+    this%phenology_c_to_litr_cel_c(:,:) = 0._r8
+    this%dwt_livecrootc_to_cwdc(:,:) = 0._r8
+    this%m_decomp_cpools_to_fire_vr(:,:,:)= 0._r8
+    this%dwt_deadcrootc_to_cwdc(:,:) = 0._r8
+    this%dwt_frootc_to_litr_lig_c(:,:) = 0._r8
+    this%dwt_frootc_to_litr_cel_c(:,:) = 0._r8
+    this%dwt_frootc_to_litr_met_c(:,:) = 0._r8
+    this%gap_mortality_c_to_litr_met_c(:,:) = 0._r8
+    this%gap_mortality_c_to_litr_cel_c(:,:) = 0._r8
+    this%gap_mortality_c_to_litr_lig_c(:,:) = 0._r8
+    this%gap_mortality_c_to_cwdc(:,:) = 0._r8
+    this%harvest_c_to_litr_met_c(:,:) = 0._r8
+    this%harvest_c_to_litr_cel_c(:,:) = 0._r8
+    this%harvest_c_to_litr_lig_c(:,:) = 0._r8
+    this%harvest_c_to_cwdc(:,:) = 0._r8
+    this%m_c_to_litr_met_fire(:,:) = 0._r8
+    this%m_c_to_litr_cel_fire(:,:) = 0._r8
+    this%m_c_to_litr_lig_fire(:,:) = 0._r8
+    this%fire_mortality_c_to_cwdc (:,:) = 0._r8
+    this%phenology_c_to_litr_lig_c(:,:) = 0._r8
+    this%cflx_input_litr_met_vr(:,:) = 0._r8
+    this%cflx_input_litr_cel_vr(:,:) = 0._r8
+    this%cflx_input_litr_lig_vr(:,:) = 0._r8
+    this%cflx_input_litr_cwd_vr(:,:) = 0._r8
+
   end subroutine initCold
 
 end module CNCarbonFluxType

@@ -5,12 +5,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 ##
 ## Makefile.am
 ## Run automake to generate a Makefile.in from this file.
@@ -46,12 +44,10 @@ INSTALL_FILES=h5_crtdat.f90 h5_rdwt.f90 \
 
 
 # Add attention tests for Fortran 2003 features
-if FORTRAN_2003_CONDITIONAL_F
-  EXAMPLE_PROG +=  rwdset_fortran2003 nested_derived_type \
-      compound_fortran2003 compound_complex_fortran2003
-  INSTALL_FILES +=  rwdset_fortran2003.f90 nested_derived_type.f90 \
-      compound_fortran2003.f90 compound_complex_fortran2003.f90
-endif
+EXAMPLE_PROG +=  rwdset_fortran2003 nested_derived_type \
+    compound_fortran2003 compound_complex_fortran2003
+INSTALL_FILES +=  rwdset_fortran2003.f90 nested_derived_type.f90 \
+    compound_fortran2003.f90 compound_complex_fortran2003.f90
 TEST_SCRIPT=testh5fc.sh
 TEST_EXAMPLES_SCRIPT=$(INSTALL_SCRIPT_FILES)
 
@@ -70,16 +66,16 @@ h5_crtatt.chkexe_: h5_rdwt.chkexe_
 # Additional dependencies for the examples are listed below
 if BUILD_PARALLEL_CONDITIONAL
 $(EXTRA_PROG): $(H5FC_PP)
-	$(H5FC_PP) $(H5CCFLAGS) $(FCFLAGS) -o $@ $(srcdir)/$@.f90;
+	$(H5FC_PP) $(H5CCFLAGS) -o $@ $(srcdir)/$@.f90;
 else
 $(EXTRA_PROG): $(H5FC)
-	$(H5FC) $(H5CCFLAGS) $(FCFLAGS) -o $@ $(srcdir)/$@.f90;
+	$(H5FC) $(H5CCFLAGS) -o $@ $(srcdir)/$@.f90;
 endif
 
 # Tell automake how to install examples
 # Note: no '/' after DESTDIR.  Explanation in commence.am
-EXAMPLEDIR=${DESTDIR}$(datarootdir)/hdf5_examples/fortran
-EXAMPLETOPDIR=${DESTDIR}$(datarootdir)/hdf5_examples
+EXAMPLEDIR=$(examplesdir)/fortran
+EXAMPLETOPDIR=$(examplesdir)
 
 # List dependencies for each example.  Normally, automake would take
 # care of this for us, but if we tell automake about the programs it
@@ -103,12 +99,10 @@ refregexample: refregexample.f90
 mountexample: mountexample.f90
 compound: compound.f90
 ph5example: ph5example.f90
-if FORTRAN_2003_CONDITIONAL_F
 rwdset_fortran2003: rwdset_fortran2003.f90
 nested_derived_type: nested_derived_type.f90
 compound_fortran2003: compound_fortran2003.f90
 compound_complex_fortran2003: compound_complex_fortran2003.f90
-endif
 
 include $(top_srcdir)/config/examples.am
-include $(top_srcdir)/config/conclude.am
+include $(top_srcdir)/config/conclude_fc.am

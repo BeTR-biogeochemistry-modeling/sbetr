@@ -12,13 +12,17 @@ module clm_instMod
   use SoilHydrologyType  , only : soilhydrology_type
   use atm2lndType        , only : atm2lnd_type
   use CNCarbonFluxType       , only : carbonflux_type
+  use PfCarbonFluxType       , only : pf_carbonflux_type
   use CNCarbonStateType      , only : carbonstate_type
   use CNStateType            , only : cnstate_type
   use CNNitrogenFluxType     , only : nitrogenflux_type
   use CNNitrogenStateType    , only : nitrogenstate_type
+  use pfNitrogenStateType    , only : pf_nitrogenstate_type
+  use PfNitrogenFluxType     , only : pf_nitrogenflux_type
   use CanopyStateType        , only : canopystate_type
   use PhosphorusFluxType     , only : phosphorusflux_type
   use PhosphorusStateType    , only : phosphorusstate_type
+  use PfPhosphorusFluxType   , only : pf_phosphorusflux_type
   use PlantMicKineticsMod    , only : PlantMicKinetics_type
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
@@ -37,12 +41,16 @@ module clm_instMod
   type(atm2lnd_type)          :: atm2lnd_vars
   type(carbonstate_type)      :: carbonstate_vars, c13state_vars, c14state_vars
   type(carbonflux_type)       :: carbonflux_vars, c13_cflx_vars, c14_cflx_vars
+  type(pf_carbonflux_type)    :: pf_carbonflux_vars
   type(nitrogenstate_type)    :: nitrogenstate_vars
+  type(pf_nitrogenstate_type) :: pf_nitrogenstate_vars
   type(nitrogenflux_type)     :: nitrogenflux_vars
+  type(pf_nitrogenflux_type)  :: pf_nitrogenflux_vars
   type(cnstate_type)          :: cnstate_vars
   type(canopystate_type)      :: canopystate_vars
   type(phosphorusstate_type)  :: phosphorusstate_vars
   type(phosphorusflux_type)   :: phosphorusflux_vars
+  type(pf_phosphorusflux_type)  :: pf_phosphorusflux_vars
   type(PlantMicKinetics_type) :: PlantMicKinetics_vars
   class(soil_water_retention_curve_type), allocatable :: soil_water_retention_curve
   contains
@@ -75,7 +83,17 @@ module clm_instMod
 
   call soilhydrology_vars%Init(bounds)
 
+  call carbonstate_vars%Init(bounds)
+
+  call c13state_vars%Init(bounds)
+
+  call c14state_vars%Init(bounds)
+
   call carbonflux_vars%Init(bounds)
+
+  call c13_cflx_vars%Init(bounds)
+
+  call c14_cflx_vars%Init(bounds)
 
   call nitrogenstate_vars%Init(bounds)
 
@@ -85,15 +103,14 @@ module clm_instMod
 
   call canopystate_vars%Init(bounds)
 
-  call carbonstate_vars%Init(bounds)
-
   call phosphorusstate_vars%Init(bounds)
 
   call phosphorusflux_vars%Init(bounds)
 
+  call PlantMicKinetics_vars%Init(bounds)
+
   allocate(soil_water_retention_curve, &
        source=create_soil_water_retention_curve())
-
 
   end subroutine clm_inst
 end module clm_instMod
