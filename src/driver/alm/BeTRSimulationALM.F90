@@ -7,7 +7,7 @@ module BeTRSimulationALM
   !
 #include "shr_assert.h"
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog,use_cn
+  use elm_varctl          , only : iulog,use_cn
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use BeTRSimulation      , only : betr_simulation_type
@@ -162,7 +162,7 @@ contains
     !USES
     !data types from alm
     use landunit_varcon , only : istcrop, istice, istsoil
-    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -212,7 +212,7 @@ contains
     !USES
     !data types from alm
     use landunit_varcon , only : istcrop, istice, istsoil
-    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -255,8 +255,8 @@ contains
    !march one time step without doing drainage
    !
    !USES
-    use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
-    use clm_varctl        , only : spinup_state
+    use elm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varctl        , only : spinup_state
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil, AA_spinup_on
     use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
@@ -415,7 +415,7 @@ contains
    !USES
     use MathfuncMod   , only : safe_div
     use lnd2atmType    , only : lnd2atm_type
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
     !ARGUMENTS
@@ -466,7 +466,7 @@ contains
    !
    !USES
     use subgridAveMod  , only : c2g
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use lnd2atmType    , only : lnd2atm_type
     use betr_decompMod , only : betr_bounds_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
@@ -550,6 +550,8 @@ contains
   !related to dynamic land use, input profiles are computed in alm.
   !
 
+  use CNStateType, only : cnstate_type
+  use elm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use CNStateType        , only : cnstate_type
   use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
@@ -1177,7 +1179,7 @@ contains
     !External interface called by ALM
 
     use WaterfluxType   , only : waterflux_type
-    use clm_varcon      , only : denh2o,spval
+    use elm_varcon      , only : denh2o,spval
     use landunit_varcon , only : istsoil, istcrop
     use betr_decompMod  , only : betr_bounds_type
     implicit none
@@ -1213,7 +1215,7 @@ contains
   !USES
   use SoilStateType              , only : soilstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
-  use clm_varcon                 , only : grav,hfus,tfrz
+  use elm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type), intent(inout)  :: this
@@ -1285,8 +1287,9 @@ contains
   use SoilHydrologyType , only : soilhydrology_type
   use CNStateType       , only : cnstate_type
   use CanopyStateType   , only : canopystate_type
+  use elm_varpar        , only : nlevsno, nlevsoi
   use tracer_varcon     , only : reaction_method
-  use tracer_varcon  , only : betr_nlevsoi
+  use tracer_varcon     , only : betr_nlevsoi
   use tracer_varcon     , only : catomw
   implicit none
   !ARGUMENTS

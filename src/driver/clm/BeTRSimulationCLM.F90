@@ -9,7 +9,7 @@ module BeTRSimulationCLM
 
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use elm_varctl          , only : iulog
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use decompMod           , only : bounds_type
   use EcophysConType      , only : ecophyscon_type
@@ -95,7 +95,7 @@ contains
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
     use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
@@ -150,7 +150,7 @@ contains
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
     use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
@@ -194,7 +194,7 @@ contains
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType         , only : patch_type
     use LandunitType      , only : landunit_type
-    use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -244,7 +244,7 @@ contains
     use betr_decompMod , only : betr_bounds_type
     use LandunitType   , only : landunit_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     ! !ARGUMENTS:
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -466,7 +466,7 @@ contains
     use MathfuncMod      , only : dot_sum
     use clm_varcon       , only : denh2o
     use WaterStateType   , only : waterstate_type
-    use clm_time_manager , only : get_nstep
+    use elm_time_manager , only : get_nstep
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -529,7 +529,7 @@ contains
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
+  use elm_varpar        , only : nlevsno, nlevsoi
   use ColumnType        , only : column_type
   use PatchType         , only : patch_type
   implicit none

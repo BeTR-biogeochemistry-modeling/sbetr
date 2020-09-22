@@ -6,7 +6,7 @@ module BeTRSimulationFactory
   ! !USES:
   !
   use abortutils  , only : endrun
-  use clm_varctl  , only : iulog
+  use elm_varctl  , only : iulog
   use shr_log_mod , only : errMsg => shr_log_errMsg
 
   implicit none

@@ -11,7 +11,7 @@ module BeTRSimulationStandalone
   !
 #include "shr_assert.h"
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use elm_varctl          , only : iulog
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use betr_decompMod      , only : betr_bounds_type
@@ -99,7 +99,7 @@ contains
     use CNStateType         , only : cnstate_type
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_standalone_type)   , intent(inout) :: this
@@ -253,7 +253,7 @@ contains
   use CNStateType       , only : cnstate_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
+  use elm_varpar        , only : nlevsno, nlevsoi
   implicit none
   !ARGUMENTS
   class(betr_simulation_standalone_type) , intent(inout)        :: this

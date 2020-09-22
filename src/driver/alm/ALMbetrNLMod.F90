@@ -41,8 +41,10 @@ contains
     use shr_nl_mod    , only : shr_nl_find_group_name
     use shr_mpi_mod   , only : shr_mpi_bcast
     use betr_utils    , only : log2str
+    use elm_varctl    , only : iulog, spinup_state
+    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
+    use ApplicationsFactory, only : AppLoadParameters
     use betr_varcon   , only : betr_maxpatch_pft, betr_max_soilorder
-    use clm_varctl    , only : iulog, spinup_state
     use betr_ctrl     , only : betr_spinup_state,bgc_type
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration, bgc_param_file
