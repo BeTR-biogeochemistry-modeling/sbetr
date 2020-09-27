@@ -1126,26 +1126,29 @@ contains
 
       endif
     enddo
-    do fc = 1, num_surfc
-      c = filter_soilc(fc)
+  endif
 
+  do fc = 1, num_surfc
+      c = filter_soilc(fc)
       p31flux_vars%sminp_runoff(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
       p31flux_vars%sminp_leached(c) = &
         this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
-    enddo
-  endif
+  enddo
+
   do fc = 1, num_surfc
     c = filter_soilc(fc)
     n14flux_vars%smin_no3_leached(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
     n14flux_vars%smin_no3_runoff(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+
   enddo
   do j = 1,betr_nlevtrc_soil
     do fc = 1, num_surfc
       c =filter_soilc(fc)
       n14state_vars%smin_no3_vr(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
+      p31state_vars%solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
     enddo
   enddo
   return
@@ -1153,8 +1156,7 @@ contains
     associate(                                                             &
     c12_decomp_cpools_vr_col =>   c12state_vars%decomp_cpools_vr   , &
     decomp_npools_vr_col =>   n14state_vars%decomp_npools_vr    , &
-    decomp_ppools_vr_col =>   p31state_vars%decomp_ppools_vr  ,  &
-    solutionp_vr        => p31state_vars%solutionp_vr          &
+    decomp_ppools_vr_col =>   p31state_vars%decomp_ppools_vr    &
 
     )
     do kk = 1, 7
@@ -1165,12 +1167,6 @@ contains
           decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
           decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
         enddo
-      enddo
-    enddo
-    do j = 1,betr_nlevtrc_soil
-      do fc = 1, num_surfc
-        c =filter_soilc(fc)
-        solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
     enddo
     end associate
@@ -1662,6 +1658,7 @@ contains
   decomp_k                 => c12_cflx_vars%decomp_k                   , &
   t_scalar                 => c12_cflx_vars%t_scalar                   , &
   w_scalar                 => c12_cflx_vars%w_scalar                   , &
+  o_scalar                 => c12_cflx_vars%o_scalar                   , &
   c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr       , &
   decomp_npools_vr_col     =>   nitrogenstate_vars%decomp_npools_vr    , &
   decomp_ppools_vr_col     =>   phosphorusstate_vars%decomp_ppools_vr  , &
@@ -1676,6 +1673,7 @@ contains
       c = filter_soilc(fc)
       this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
       this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j)
+      this%biophys_forc(c)%c12flx%in_o_scalar(c_l,j) = o_scalar(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
       this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
