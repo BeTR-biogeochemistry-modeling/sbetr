@@ -1357,6 +1357,7 @@ contains
 !      print*,'sefok,j',j,this%v1eca_forc(c,j)%decomp_k(1:ncentpools)
       this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
       this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
+      this%v1eca_forc(c,j)%o_scalar = biophysforc%c12flx%in_o_scalar(c,j)
       !litter C
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1)/catomw)
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2)/catomw)
@@ -2297,7 +2298,7 @@ contains
         enddo
 
         !soluble P
-        biogeo_state%p31state_vars%sminp_vr_col(c,j) = biogeo_state%p31state_vars%sminp_vr_col(c,j) + patomw * &
+        biogeo_state%p31state_vars%sminp_vr_col(c,j) = patomw * &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)
 
         !mineral nitrogen
