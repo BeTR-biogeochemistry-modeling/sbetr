@@ -5,7 +5,7 @@
 #app_namePlantSoilBGCType.F90
 
 def MakeNlayer(sfarm_dir, app_name):
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer'+"/CMakeLists.txt"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer'+"/CMakeLists.txt")
     fcmake=open(sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer'+"/CMakeLists.txt","w")
     fcmake.write("set("+app_name.upper()+"NLAYER_SOURCES\n")
     fcmake.write("  "+app_name+"BGCReactionsType.F90\n")
@@ -36,7 +36,7 @@ def MakeNlayer(sfarm_dir, app_name):
     fcmake.write("endif()\n")
     fcmake.close()
 #app_nameBGCReactionsType.F90
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"BGCReactionsType.F90"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"BGCReactionsType.F90")
     ff90=open(sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"BGCReactionsType.F90","w")
     ff90.write("module "+app_name+"BGCReactionsType\n")
     import datetime
@@ -1617,7 +1617,7 @@ def MakeNlayer(sfarm_dir, app_name):
     ff90.write("  end subroutine update_sorpphase_coeff\n")
     ff90.write("end module "+app_name+"BGCReactionsType\n")
     ff90.close()
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"PlantSoilBGCType.F90"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"PlantSoilBGCType.F90")
     ff90=open(sfarm_dir+'/'+app_name+'/'+app_name+'Nlayer/'+app_name+"PlantSoilBGCType.F90","w")
     ff90.write("module "+app_name+"PlantSoilBGCType\n")
     ff90.write("  !\n")

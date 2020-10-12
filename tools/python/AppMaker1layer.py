@@ -3,7 +3,7 @@
 #CMakeLists.txt
 
 def Make1layer(sfarm_dir, app_name):
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/CMakeLists.txt"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/CMakeLists.txt")
     fcmake=open(sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/CMakeLists.txt","w")
     fcmake.write("set("+app_name.upper()+"1LAYER_SOURCES\n")
     fcmake.write("  "+app_name+"BGCIndexType.F90\n")
@@ -28,7 +28,7 @@ def Make1layer(sfarm_dir, app_name):
     fcmake.write("endif()\n")
     fcmake.close()
 
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCIndexType.F90"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCIndexType.F90")
     ff90=open(sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCIndexType.F90","w")
     ff90.write("module "+app_name+"BGCIndexType\n")
     ff90.write("  use bshr_kind_mod  , only : r8 => shr_kind_r8\n")
@@ -351,7 +351,7 @@ def Make1layer(sfarm_dir, app_name):
     ff90.write("end module "+app_name+"BGCIndexType\n")
     ff90.write("\n")
     ff90.close()
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCType.F90"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCType.F90")
     ff90=open(sfarm_dir+'/'+app_name+'/'+app_name+'1layer'+"/"+app_name+"BGCType.F90","w")
     ff90.write("module "+app_name+"BGCType\n")
     ff90.write("#include "+'"'+"bshr_assert.h"+'"\n')

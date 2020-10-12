@@ -3,7 +3,7 @@
 #CMakeLists.txt
 
 def MakePara(sfarm_dir, app_name):
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/CMakeLists.txt"
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/CMakeLists.txt")
     fcmake=open(sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/CMakeLists.txt","w")
     fcmake.write("set("+app_name.upper()+"PARA_SOURCES\n")
     fcmake.write("  "+app_name+"ParaType.F90\n")
@@ -26,8 +26,8 @@ def MakePara(sfarm_dir, app_name):
     fcmake.write("    install(FILES ${HEADERS} DESTINATION include/soil-farm/"+app_name+"/"+app_name+"Para)\n")
     fcmake.write("endif()\n")
     fcmake.close()
-    print ""
-    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90"
+    print ("")
+    print ("create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90")
 #app_nameParaType.F90
     fpara=open(sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90","w")
     fpara.write("module "+app_name+"ParaType\n")

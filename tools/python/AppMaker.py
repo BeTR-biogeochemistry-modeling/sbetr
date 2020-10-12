@@ -31,34 +31,34 @@ app_name=args.appname[0]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-print dir_path
+print ("current_directory: %s"%dir_path)
 
-mdir,chdir=dir_path.split('/sbetr')
+mdir,chdir=dir_path.split('/sbetr/')
 sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #mkdir directories
 print ("Create directories")
 
 if args.action[0] == 'add':
-    print "add a new case"
+    print ("add a new case")
     os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Para')
     os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'1layer')
     os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Nlayer')
-    print ""
+    print ("\n")
 elif args.action[0] == 'remove':
     yourvar = input('really to remove the app '+app_name+': yes/no')
     print('you entered: ' + yourvar)
     if yourvar =='yes':
         try:
-            print 'app: '+app_name +' is  removed'
+            print ('app: '+app_name +' is  removed')
             os.system('rm -rf '+sfarm_dir+'/'+app_name)
         except:
             pass
     else:
-        print 'AppMaker did nothing'
+        print ('AppMaker did nothing')
     quit()
 else:
-    print 'AppMaker did nothing'
+    print ('AppMaker did nothing')
     quit()
 print ("Create files")
 
