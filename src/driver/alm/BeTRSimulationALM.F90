@@ -1126,24 +1126,25 @@ contains
 
       endif
     enddo
-  endif
 
-  do fc = 1, num_surfc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       p31flux_vars%sminp_runoff(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
       p31flux_vars%sminp_leached(c) = &
         this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
-  enddo
+    enddo
 
-  do fc = 1, num_surfc
-    c = filter_soilc(fc)
-    n14flux_vars%smin_no3_leached(c)= &
+    do fc = 1, num_surfc
+      c = filter_soilc(fc)
+      n14flux_vars%smin_no3_leached(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
-    n14flux_vars%smin_no3_runoff(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+      n14flux_vars%smin_no3_runoff(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
 
-  enddo
+    enddo
+  endif
+
   do j = 1,betr_nlevtrc_soil
     do fc = 1, num_surfc
       c =filter_soilc(fc)

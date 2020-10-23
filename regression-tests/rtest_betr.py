@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """BeTR regression test driver
 
 Author: Ben Andre <andre@ucar.edu>
@@ -1092,7 +1092,7 @@ def main(options):
     else:
         loc=subprocess.check_output(["which", "ncgen"])
         ncgen=str(loc.strip().decode())
-    
+
     convert_input_data(ncgen, input_dir, dry_run)
 
     print('Setting up tests.')
