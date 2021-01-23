@@ -2,60 +2,61 @@
 
 Data structure for coupling betr to elm/clm
 |Source File | Description|
-|CNCarbonFluxType.F90          |  x|
-|PfCarbonFluxType.F90    | x|
-|CNCarbonStateType.F90        |x|
-|CNDecompCascadeConType.F90     |x|
-|CNNitrogenFluxType.F90       |x|
-|PfNitrogenFluxType.F90         |x|
-|CNNitrogenStateType.F90        |x|
-|PfNitrogenStateType.F90        |x|
-|CNSharedParamsMod.F90          |x|
-|CNStateType.F90               |x|
-|CanopyStateType.F90         |x|
-|ChemStateType.F90            |x|
-|ColumnType.F90        |x|
-|EcophysConType.F90             |x|
-|FuncPedotransferMod.F90        |x|
-|GridcellType.F90               |x|
-|LandunitType.F90         |x|
-|PatchType.F90              |x|
-|lnd2atmType.F90            |x|
-|PhosphorusFluxType.F90       |x|
-|PfPhosphorusFluxType.F90     |x|                  
-|PhosphorusStateType.F90        |x|
-|QSatMod.F90                   |x|
-|SoilHydrologyType.F90          |x|
-|SoilStateType.F90           |x|
-|SoilWaterRetentionCurveClappHornberg1978Mod.F90 |x|
-|SoilWaterRetentionCurveFactoryMod.F90    | x|
-|SoilWaterRetentionCurveMod.F90   |x|
-|SurfaceResistanceMod.F90       |x|
-|TemperatureType.F90            |x|
-|PfTemperatureType.F90          |x|
-|TridiagonalMod.F90            |x|
-|WaterFluxType.F90           |x|
-|PfWaterFluxType.F90         |x|
-|WaterStateType.F90        |x|
-|accumulMod.F90                |x|
-|atm2lndType.F90          |x|
-|clm_initializeMod.F90          |x|
-|clm_instMod.F90            |x|
-|clm_time_manager.F90       |x|
-|clm_varcon.F90            |x|
-|clm_varctl.F90          |x|
-|clm_varpar.F90             |x|
-|clmgridMod.F90               |x|
-|column_varcon.F90           |x|
-|debuginfoMod.F90            |x|
-|decompMod.F90                |x|
-|PlantMicKineticsMod.F90         |x|
-|fileutils.F90                 |x|
-|getdatetime.F90             |x|
-|histFileMod.F90                |x|
-|landunit_varcon.F90            |x|
-|pftvarcon.F90                 |x|
-|restUtilMod.F90               |x|
-|soilorder_varcon.F90          |x|
-|spmdMod.F90                 |x|
-|subgridAveMod.F90   |x                 |
+|------|------|
+|CNCarbonFluxType.F90          |  Column carbon flux data type |
+|PfCarbonFluxType.F90    | Patch carbon flux data type|
+|CNCarbonStateType.F90        |Column carbon flux data type|
+|CNDecompCascadeConType.F90     |Parameter structure defines basic parameters for decomposition|
+|CNNitrogenFluxType.F90       |Column nitrogen flux data type|
+|PfNitrogenFluxType.F90         |Patch nitrogen flux data type|
+|CNNitrogenStateType.F90        |Column nitrogen state data type|
+|PfNitrogenStateType.F90        |Patch nitrogen state data type|
+|CNSharedParamsMod.F90          |Shared data strcuture for CN and cent-like bgc|
+|CNStateType.F90               |Column data type for CN bgc|
+|CanopyStateType.F90         |Canopy related variables|
+|ChemStateType.F90            |Soil chemical state variables|
+|ColumnType.F90        |Variables define the column type|
+|EcophysConType.F90             |ecosystem level parameters|
+|FuncPedotransferMod.F90        |Different pedotransfer functions|
+|GridcellType.F90               |Variables define the grid type|
+|LandunitType.F90         |Variables define the land unit type|
+|PatchType.F90              |Variables define the patch type|
+|lnd2atmType.F90            |Variables for land-atmosphere exchange|
+|PhosphorusFluxType.F90       |Column phosphorus flux data type|
+|PfPhosphorusFluxType.F90     |Patch phosphorus flux data type|                  
+|PhosphorusStateType.F90        |Column phosphorus state data type|
+|QSatMod.F90                   |Subroutines for vapor pressure calculation|
+|SoilHydrologyType.F90          |Column level hydroloy related variables|
+|SoilStateType.F90           |Soil properties|
+|SoilWaterRetentionCurveClappHornberg1978Mod.F90 |Soil water retention curve based on Clapp Hornberg 1978 paper|
+|SoilWaterRetentionCurveFactoryMod.F90    |Module interface for flexible soil water retention curve parameterization|
+|SoilWaterRetentionCurveMod.F90   |Base type for soil water retention curve parameterization|
+|SurfaceResistanceMod.F90       |Soil resistance for air-soil gas exchange|
+|TemperatureType.F90            |Column soil temperature data type|
+|PfTemperatureType.F90          |Patch soil temperature data type|
+|TridiagonalMod.F90            |Tridiagnoal solver|
+|WaterFluxType.F90           |Column water flux data type|
+|PfWaterFluxType.F90         |Patch water flux data type|
+|WaterStateType.F90        |Water state variables|
+|accumulMod.F90                |Code to support temporal average of user defined variables|
+|atm2lndType.F90          |Atmospheric forcing type|
+|clm_initializeMod.F90          |module to initialize clm|
+|clm_instMod.F90            |module to initialize clm data types|
+|clm_time_manager.F90       |module to time stamp management|
+|clm_varcon.F90            |define mathematical constants|
+|clm_varctl.F90          |define logical switches that control the model|
+|clm_varpar.F90             |define parameters related to model data structure|
+|clmgridMod.F90               |define and initialize clm grid|
+|column_varcon.F90           |column constant variables|
+|debuginfoMod.F90            |subroutines to assist model debug|
+|decompMod.F90                |data structure to support parallelization|
+|PlantMicKineticsMod.F90         |kinetic data type to link the big leaf module with soil bgc|
+|fileutils.F90                 |subroutines for file management|
+|getdatetime.F90             |date time subroutine|
+|histFileMod.F90                |history file data structure|
+|landunit_varcon.F90            |land unit constants|
+|pftvarcon.F90                 |patch constants|
+|restUtilMod.F90               |subroutines to support restart file I/O|
+|soilorder_varcon.F90          |soil order parameters|
+|spmdMod.F90                 |mpi related variables|
+|subgridAveMod.F90   |subroutines to do subgrid average                 |

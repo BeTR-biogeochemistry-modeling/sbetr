@@ -2,12 +2,12 @@
 
 |Directory        | Description |
 |------|----|
-|Applications/    | code for user defined soil bgc|
-|betr/            | essential code for betr|
+|Applications/    | Code for user defined soil bgc|
+|betr/            | Essential code for betr|
 |driver/          | APIs for coupling with land models|
-|esmf_wrf_timemgr/| tools for time management from esmf|
-|io_util/         | netcdf I/O tools|
-|jarmodel/        | utility code to run BGC models in single layer mode|
-|math_test/       | testing code for numerical solvers|
+|esmf_wrf_timemgr/| Tools for time management from esmf|
+|io_util/         | Netcdf I/O tools|
+|jarmodel/        | Utility code to run BGC models in single layer mode|
+|math_test/       | Testing code for numerical solvers|
 |shr/             | shr utility code for coupling with CLM and ELM|
-|stub_clm/        | data structure to couple with elm/clm|
+|stub_clm/        | Data structure to couple with elm/clm|
