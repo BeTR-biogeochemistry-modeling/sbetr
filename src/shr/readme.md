@@ -1,11 +1,16 @@
-#src
+# shr
 
-Applications/     : code for user defined soil bgc
-betr/             : essential code for betr
-driver/           : APIs for coupling with land models
-esmf_wrf_timemgr/ : tools for time management from esmf
-io_util/          : netcdf I/O tools
-jarmodel/         : utility code to run BGC models in single layer mode
-math_test/        : testing code for numerical solvers
-shr/              : shr utility code for coupling with CLM and ELM.
-stub_clm/         : data structure to couple with elm/clm
+|Source File        | Description |
+|------|----|
+|shr_kind_mod.F90 | subroutines define numerical precision of basic data types|
+|shr_const_mod.F90 | Define commonly accepted physical constants|
+|shr_mpi_mod.F90 | Mpi based data manipulation and communication|
+|shr_file_mod.F90 | Subroutines for file management|
+|shr_nl_mod.F90 | Subroutines for namelist management|
+|shr_infnan_mod.F90 |Subroutines for handling NaN|
+|shr_string_mod.F90 |Subroutines for string operation|
+|shr_sys_mod.F90 |Subroutines for interacting the model with the operation system|
+|shr_assert_mod.F90 |Subroutines to handle data consistency check|
+|shr_log_mod.F90 |Subroutines to write log file|
+|shr_timer_mod.F90 |Subroutines to manipulation time stamp information|
+|abortutils.F90 | Subroutines to handle abortion information|

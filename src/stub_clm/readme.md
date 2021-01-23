@@ -1,4 +1,4 @@
-# src/stub_clm
+# stub_clm
 
 Data structure for coupling betr to elm/clm
 |Source File | Description|
@@ -16,7 +16,7 @@ Data structure for coupling betr to elm/clm
 |CanopyStateType.F90         |Canopy related variables|
 |ChemStateType.F90            |Soil chemical state variables|
 |ColumnType.F90        |Variables define the column type|
-|EcophysConType.F90             |ecosystem level parameters|
+|EcophysConType.F90             |Ecosystem level parameters|
 |FuncPedotransferMod.F90        |Different pedotransfer functions|
 |GridcellType.F90               |Variables define the grid type|
 |LandunitType.F90         |Variables define the land unit type|
@@ -40,23 +40,23 @@ Data structure for coupling betr to elm/clm
 |WaterStateType.F90        |Water state variables|
 |accumulMod.F90                |Code to support temporal average of user defined variables|
 |atm2lndType.F90          |Atmospheric forcing type|
-|clm_initializeMod.F90          |module to initialize clm|
-|clm_instMod.F90            |module to initialize clm data types|
-|clm_time_manager.F90       |module to time stamp management|
-|clm_varcon.F90            |define mathematical constants|
-|clm_varctl.F90          |define logical switches that control the model|
-|clm_varpar.F90             |define parameters related to model data structure|
-|clmgridMod.F90               |define and initialize clm grid|
-|column_varcon.F90           |column constant variables|
-|debuginfoMod.F90            |subroutines to assist model debug|
-|decompMod.F90                |data structure to support parallelization|
-|PlantMicKineticsMod.F90         |kinetic data type to link the big leaf module with soil bgc|
-|fileutils.F90                 |subroutines for file management|
-|getdatetime.F90             |date time subroutine|
-|histFileMod.F90                |history file data structure|
-|landunit_varcon.F90            |land unit constants|
-|pftvarcon.F90                 |patch constants|
-|restUtilMod.F90               |subroutines to support restart file I/O|
-|soilorder_varcon.F90          |soil order parameters|
-|spmdMod.F90                 |mpi related variables|
-|subgridAveMod.F90   |subroutines to do subgrid average                 |
+|clm_initializeMod.F90          |Module to initialize clm|
+|clm_instMod.F90            |Module to initialize clm data types|
+|clm_time_manager.F90       |Module to time stamp management|
+|clm_varcon.F90            |Define mathematical constants|
+|clm_varctl.F90          |Define logical switches that control the model|
+|clm_varpar.F90             |Define parameters related to model data structure|
+|clmgridMod.F90               |Define and initialize clm grid|
+|column_varcon.F90           |Column constant variables|
+|debuginfoMod.F90            |Subroutines to assist model debug|
+|decompMod.F90                |Data structure to support parallelization|
+|PlantMicKineticsMod.F90         |Kinetic data type to link the big leaf module with soil bgc|
+|fileutils.F90                 |Subroutines for file management|
+|getdatetime.F90             |Date time subroutine|
+|histFileMod.F90                |History file data structure|
+|landunit_varcon.F90            |Land unit constants|
+|pftvarcon.F90                 |Patch constants|
+|restUtilMod.F90               |Subroutines to support restart file I/O|
+|soilorder_varcon.F90          |Soil order parameters|
+|spmdMod.F90                 |Mpi related variables|
+|subgridAveMod.F90   |Subroutines to do subgrid average                 |
