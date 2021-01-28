@@ -1,11 +1,15 @@
-#src
+# betr
 
-Applications/     : code for user defined soil bgc
-betr/             : essential code for betr
-driver/           : APIs for coupling with land models
-esmf_wrf_timemgr/ : tools for time management from esmf
-io_util/          : netcdf I/O tools
-jarmodel/         : utility code to run BGC models in single layer mode
-math_test/        : testing code for numerical solvers
-shr/              : shr utility code for coupling with CLM and ELM.
-stub_clm/         : data structure to couple with elm/clm
+|Directory        | Description |
+|------|----|
+|betr_bgc/|modules for bgc coupling with host land models|
+|betr_core/|essential betr tracer modules|
+|betr_dtype/|supporting modules for bgc coupling with host land models|
+|betr_echem/|equilibrium chemistry modules|
+|betr_grid/|hierarchical grid structure|
+|betr_main/|core betr functional modules|
+|betr_math/|supporting math modules|
+|betr_para/|tracer parameterization modules|
+|betr_rxns/|example reaction modules|
+|betr_transport/|tracer transport alogorithms|
+|betr_util/|utility modules supporting general data/message handling|
