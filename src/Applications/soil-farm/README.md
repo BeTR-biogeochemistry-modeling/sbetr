@@ -1,6 +1,6 @@
 # soilbgc-farm
 
-a group of different implementations for soil biogeochemical modeling.
+A group of different implementations for soil biogeochemical modeling.
 
 |Directory        | Description |
 |------|----|
