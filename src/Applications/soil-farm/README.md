@@ -8,7 +8,7 @@ a group of different implementations for soil biogeochemical modeling.
 |cdom/|testing model for doc|
 |ch4lake/|testing model for lake ch4|
 |ch4soil/|testing model for updated soil ch4|
-|ecacnp/||
-|keca/|x|
+|ecacnp/|Offline eca based century-like soil bgc|
+|keca/|testing model variant of ecacnp|
 |simic/|testing simple microbial model|
 |v1eca/|an implementation of the eca-cnp model equivalent to elm-v1-eca|

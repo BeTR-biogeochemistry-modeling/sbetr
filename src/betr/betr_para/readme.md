@@ -2,6 +2,6 @@
 
 |Source File        | Description |
 |------|----|
-|  ALMbetrNLMod.F90|Subroutine for namelist I/O|
-|  calibrationType.F90|Auxiliary data type for calibration|
-|  BeTRSimulationALM.F90|Method for ALM interface|
+|  TracerParamSetMod.F90|Set tracer properties|
+|  TracerParamSetWatIsoMod.F90|Set water isotope tracer properties|
+|  TracerParamsMod.F90|Methods for parameterizing tracer properties|

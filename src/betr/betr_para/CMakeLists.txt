@@ -2,7 +2,6 @@ set(BETR_PARA_SOURCES
   TracerParamSetMod.F90
   TracerParamSetWatIsoMod.F90
   TracerParamsMod.F90
-
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
