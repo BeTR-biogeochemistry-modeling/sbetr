@@ -291,7 +291,7 @@ AR, CO2, CH4 and DOC
 
   # single layer mode
 
-  ./sbetr reaction.jar.sbetr.nl
+  ./jarmodel reaction.jar.sbetr.nl
   ```
 ## Development
 
