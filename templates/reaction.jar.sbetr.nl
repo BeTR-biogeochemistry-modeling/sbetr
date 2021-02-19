@@ -3,6 +3,7 @@
   phosphorus_stress=.false.
   nitrogen_stress=.true.
   case_id='exp1'
+  hist_freq='day'
 /
 
 &betr_time

@@ -110,6 +110,7 @@ subroutine run_model(namelist_buffer)
 
   ncols =1
   case_id=''
+  hist_freq='day'
   if ( .true. )then
      ioerror_msg=''
      read(namelist_buffer, nml=jar_driver, iostat=nml_error, iomsg=ioerror_msg)
