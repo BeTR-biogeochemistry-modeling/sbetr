@@ -5,6 +5,7 @@
   continue_run=.false.
   is_nitrogen_active=.false.
   is_phosphorus_active =.false.
+  freqall = 'day'
 /
 
 &betr_parameters
@@ -19,7 +20,7 @@
 
 &betr_time
   delta_time=1800.
-  stop_n = 5
+  stop_n = 30
   hist_freq=30
   stop_option='nyears'
 /
