@@ -29,7 +29,7 @@ contains
   use BeTRSimulationStandalone, only : betr_simulation_standalone_type
   use BeTRSimulationALM     , only : betr_simulation_alm_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
-  use clm_varpar            , only : nlevtrc_soil
+  use clm_varpar            , only : nlevtrc_soil, nlevsoi, nlevgrnd
   use decompMod             , only : bounds_type
   use bncdio_pio            , only : file_desc_t
   use clm_instMod           , only : atm2lnd_vars
@@ -58,7 +58,7 @@ contains
   use LandunitType          , only : lun
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
-  use clm_varpar            , only : nlevsno, nlevsoi
+  use clm_varpar            , only : nlevsno
   use histMod               , only : histf_type
   use HistBGCMod            , only : hist_bgc_type
   use tracer_varcon         , only : reaction_method, betr_nlevsno, betr_nlevsoi
@@ -119,16 +119,17 @@ contains
   bounds%begl = 1
   bounds%endl = 1
   bounds%lbj  = 1
-  bounds%ubj  = nlevtrc_soil
   numfls = ncols
   allocate(filters(1:numfls));filters(:)=(/(jj,jj=1,ncols)/)
   allocate(jtops(1:numfls)); jtops(:)=1
-  betr_nlevsno = nlevsno
-  betr_nlevsoi = nlevsoi
 
   !set up grid
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
+  betr_nlevsno = nlevsno
+  betr_nlevsoi = nlevsoi
+  bounds%ubj  = nlevtrc_soil
+
   call init_clm_vertgrid(grid_data%nlevgrnd)
 
   call initialize(bounds)

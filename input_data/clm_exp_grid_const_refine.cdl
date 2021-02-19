@@ -1,0 +1,352 @@
+netcdf clm_exp_grid_2x.cdl {
+dimensions:
+	levgrnd = 30 ;
+	lndgrid = 1 ;
+variables:
+	double BSW(levgrnd, lndgrid) ;
+		BSW:long_name = "slope of soil water retention curve" ;
+		BSW:units = "unitless" ;
+		BSW:_FillValue = 9.99999961690316e+35 ;
+		BSW:missing_value = 1.e+36f ;
+	double SUCSAT(levgrnd, lndgrid) ;
+		SUCSAT:long_name = "saturated soil matric potential" ;
+		SUCSAT:units = "mm" ;
+		SUCSAT:_FillValue = 1.e+36f ;
+		SUCSAT:missing_value = 1.e+36f ;
+	double DZSOI(levgrnd, lndgrid) ;
+		DZSOI:long_name = "soil thickness" ;
+		DZSOI:units = "m" ;
+		DZSOI:_FillValue = 9.99999961690316e+35 ;
+		DZSOI:missing_value = 1.e+36f ;
+	double PCTSAND(levgrnd, lndgrid) ;
+		PCTSAND:long_name = "percentage of sand" ;
+		PCTSAND:units = "%" ;
+		PCTSAND:_FillValue = 9.99999961690316e+35 ;
+		PCTSAND:missing_value = 1.e+36f ;
+  double PCTCLAY(levgrnd, lndgrid) ;
+		PCTCLAY:long_name = "soil clay content" ;
+		PCTCLAY:units = "%" ;
+		PCTCLAY:_FillValue = 1.e+36f ;
+		PCTCLAY:missing_value = 1.e+36f ;
+	double WATSAT(levgrnd, lndgrid) ;
+		WATSAT:long_name = "saturated soil water content (porosity)" ;
+		WATSAT:units = "mm3/mm3" ;
+		WATSAT:_FillValue = 9.99999961690316e+35 ;
+		WATSAT:missing_value = 1.e+36f ;
+	double ZSOI(levgrnd, lndgrid) ;
+		ZSOI:long_name = "soil depth" ;
+		ZSOI:units = "m" ;
+		ZSOI:_FillValue = 9.99999961690316e+35 ;
+		ZSOI:missing_value = 1.e+36f ;
+	double lat(lndgrid) ;
+		lat:long_name = "coordinate latitude" ;
+		lat:units = "degrees_north" ;
+		lat:_FillValue = 9.99999961690316e+35 ;
+		lat:missing_value = 1.e+36f ;
+	double levgrnd(levgrnd) ;
+		levgrnd:long_name = "coordinate soil levels" ;
+		levgrnd:units = "m" ;
+	double lon(lndgrid) ;
+		lon:long_name = "coordinate longitude" ;
+		lon:units = "degrees_east" ;
+		lon:_FillValue = 9.99999961690316e+35 ;
+		lon:missing_value = 1.e+36f ;
+  double CELLORG(levgrnd, lndgrid) ;
+		CELLORG:long_name = "soil organic mass content" ;
+		CELLORG:units = "kg/m3" ;
+		CELLORG:_FillValue = 1.e+36f ;
+		CELLORG:missing_value = 1.e+36f ;
+// global attributes:
+		:title = "CLM History file information" ;
+		:comment = "NOTE: None of the variables are weighted by land fraction!" ;
+		:Conventions = "CF-1.0" ;
+		:history = "Tue Jan 26 14:08:50 2016: ncks -v WATSAT,lon,lat,DZSOI,ZSOI,BSW CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.norm.2016-01-15.clm2.h0.0001-01-01-00000.nc sierra_grid.nc\n",
+			"created on 01/20/16 13:41:24" ;
+		:source = "Community Land Model CLM4.0" ;
+		:hostname = "lawrencium-lr3" ;
+		:username = "jitang" ;
+		:version = "cesm1_3_beta10" ;
+		:revision_id = "$Id: histFileMod.F90 42903 2012-12-21 15:32:10Z muszala $" ;
+		:case_title = "UNSET" ;
+		:case_id = "CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.norm.2016-01-15" ;
+		:Surface_dataset = "surfdata_US-Blo_grid_c160115.nc" ;
+		:Initial_conditions_dataset = "CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.2016-01-15.clm2.r.0061-01-01-00000.nc" ;
+		:PFT_physiological_constants_dataset = "clm_params.c140423.nc" ;
+		:ltype_vegetated_or_bare_soil = 1 ;
+		:ltype_crop = 2 ;
+		:ltype_landice = 3 ;
+		:ltype_landice_multiple_elevation_classes = 4 ;
+		:ltype_deep_lake = 5 ;
+		:ltype_wetland = 6 ;
+		:ltype_urban_tbd = 7 ;
+		:ltype_urban_hd = 8 ;
+		:ltype_urban_md = 9 ;
+		:NCO = "\"4.5.3\"" ;
+data:
+
+ BSW =
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954,
+  5.581954 ;
+ SUCSAT =
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655,
+  139.0655 ;
+ DZSOI =
+   0.003550317708597,
+   0.008109015883752,
+   0.010412182499062,
+   0.013369506971986,
+   0.017166786760615,
+   0.022042590523488,
+   0.028303246481799,
+   0.036342087857407,
+   0.046664164504410,
+   0.059917973272160,
+   0.076936200597871,
+   0.098788037031052,
+   0.126846350412561,
+   0.162873937943808,
+   0.209134276035871,
+   0.268533725930649,
+   0.344804129332813,
+   0.442737265842220,
+   0.568485902256248,
+   0.729950347525685,
+   0.937274799143029,
+   1.203484664520547,
+   1.545304897838303,
+   1.984210765356434,
+   2.547777054783097,
+   3.271410494395334,
+   4.200574223222620,
+   5.393644067301208,
+   6.925576070981800,
+   7.786792244405927 ;
+
+ PCTSAND =
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000,
+  20.000000;
+
+ PCTCLAY =
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0,
+   9.0 ;
+
+ WATSAT =
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0 ;
+ ZSOI =
+                   0,
+   0.007100635417194,
+   0.016218031767503,
+   0.027925000415317,
+   0.042957045711476,
+   0.062258573936546,
+   0.087042226758452,
+   0.118865066900143,
+   0.159726402473266,
+   0.212193395908963,
+   0.279562349017587,
+   0.366065797104704,
+   0.477138423079692,
+   0.619758497929827,
+   0.802886298967308,
+   1.038027050001570,
+   1.339953750828606,
+   1.727635308667197,
+   2.225428282513045,
+   2.864607113179692,
+   3.685328977564415,
+   4.739156711465750,
+   6.092298306605510,
+   7.829766507142356,
+  10.060719837318379,
+  12.925320616708550,
+  16.603540826109047,
+  21.326469063153791,
+  27.390828960711463,
+  35.177621205117390 ;
+
+ lat = 38.8951988 ;
+
+ levgrnd = 0, 0.007100635417194, 0.016218031767503, 0.027925000415317, 0.042957045711476,
+    0.062258573936546, 0.087042226758452, 0.118865066900143, 0.159726402473266,
+    0.212193395908963, 0.279562349017587, 0.366065797104704, 0.477138423079692,
+    0.619758497929827, 0.802886298967308, 1.038027050001570, 1.339953750828606,
+    1.727635308667197, 2.225428282513045, 2.864607113179692, 3.685328977564415,
+    4.739156711465750, 6.092298306605510, 7.829766507142356, 10.060719837318379,
+   12.925320616708550, 16.603540826109047, 21.326469063153791, 27.390828960711463,
+   35.177621205117390 ;
+
+ lon = 239.367294 ;
+
+ CELLORG =
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0 ;
+}
