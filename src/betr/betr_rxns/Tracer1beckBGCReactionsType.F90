@@ -316,10 +316,10 @@ contains
          u = qflx_adv(c,jtops(c)-1)
 
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_doc) &
-           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
+           = 1._r8              !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_dom) &
-           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
+           = 1._r8              !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
          condc_toplay_col(c,groupid(id_trc_doc))= 2._r8*diffblkm_topsoi_col(c,groupid(id_trc_doc))/dz_top(c)                        !m/s surface conductance
@@ -691,10 +691,11 @@ contains
    xp=z+u*time
    dtime=D*time
 
-   ans=0.5_r8*eerfc(xm/(2._r8*sqrt(Dtime)),0._r8)
-   ans=ans+0.5_r8*eerfc(xp/(2._r8*sqrt(Dtime)),u*z/D)
+   ans=0.5_r8*erfc(xm/(2._r8*sqrt(Dtime)))
+   ans=ans+0.5_r8*erfc_scaled(xp/(2._r8*sqrt(Dtime)))*exp(-(xp*xp)/(4*dtime)+u*z/D)
 
-   ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*eerfc((2._r8*L-xm)/(2._r8*sqrt(Dtime)),u*L/D)
+   ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*erfc_scaled((2._r8*L-xm)/(2._r8*sqrt(Dtime)))* &
+        exp(-((2._r8*L-xm)*(2._r8*L-xm))/(4._r8*Dtime)+u*L/D)
    ans=ans-sqrt(u*u*time/(D*pi))*exp(u*L/D-(2._r8*L-xm)**2._r8/(4._r8*Dtime))
 
    end function conc1

@@ -3,7 +3,7 @@
 /
 
 &betr_parameters
-  reaction_method = 'tracer1beck_run'
+  reaction_method = 'tracer2beck_run'
 /
 
 &betr_time
@@ -14,12 +14,13 @@
 
 &forcing_inparm
   forcing_type_name ='steady state'
-  forcing_filename = '../../../input_data/uniform_steadystate_sat_forcing.cdl.nc'
+  forcing_filename = '../../../input_data/uniform_steadystate_sat_forcing_30layer.cdl.nc'
 /
 
 &betr_grid
-  grid_data_filename = '../../../input_data/clm_exp_grid_const.cdl.nc'
-  nlevtrc_soil = 15
+  grid_data_filename = '../../../input_data/clm_exp_grid_const_refine.cdl.nc'
+  nlevtrc_soil = 30
+  nlevgrnd = 30
 /
 
 &regression_test

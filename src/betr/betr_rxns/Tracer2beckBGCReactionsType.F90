@@ -283,6 +283,7 @@ contains
     character(len=255) :: subname = 'set_boundary_conditions'
     real(r8) :: irt   !the inverse of R*T
     real(r8) :: u
+    real(r8) :: curtime
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
 
@@ -308,18 +309,20 @@ contains
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          u = qflx_adv(c,jtops(c)-1)
+
+         curtime=betr_time%time+betr_time%delta_time*0._r8
          !eventually, the following code will be implemented using polymorphism
          !tracer concentration at the beginning and end of the time step
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_doc) &
-            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
+            = conc2(curtime, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
 
+         curtime=betr_time%time+betr_time%delta_time*1._r8
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_dom) &
-            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
+            = conc2(curtime, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(id_trc_doc))/dz_top(c)                         !m/s surface conductance
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(id_trc_dom))/dz_top(c)                         !m/s surface conductance
-
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= 2._r8*diffblkm_topsoi_col(c,groupid(id_trc_doc))/dz_top(c)                         !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= 2._r8*diffblkm_topsoi_col(c,groupid(id_trc_dom))/dz_top(c)                         !m/s surface conductance
       enddo
 
     end associate
@@ -676,12 +679,12 @@ contains
    real(r8), intent(in) :: D
    real(r8), intent(in) :: u
    real(r8) :: ans
-   real(r8), parameter :: c0=12./23.
-   real(r8), parameter :: A1=9./23.
-   real(r8), parameter :: A2=2./23.
-   real(r8), parameter :: pi=3.1415926
-   real(r8), parameter :: w1=2.*pi/(365.*86400.)
-   real(r8), parameter :: w2=2.*pi/(86400.)
+   real(r8), parameter :: c0=12._r8/23._r8
+   real(r8), parameter :: A1=9._r8/23._r8
+   real(r8), parameter :: A2=2._r8/23._r8
+   real(r8), parameter :: pi=3.1415926_r8
+   real(r8), parameter :: w1=2._r8*pi/(365._r8*86400._r8)
+   real(r8), parameter :: w2=2._r8*pi/(86400._r8)
    real(r8), parameter :: tiny_val=1.e-10_r8
 
    real(r8) :: ds1, ds2
@@ -689,12 +692,12 @@ contains
    ds1=sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w1*w1))
    ds2=sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w2*w2))
    if(abs(z)<tiny_val)then
-     ans=c0+A1*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds1)*sin(w1*time) &
-       +A2*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds2)*sin(w2*time)
+     ans=c0+A1*exp(-u/(2._r8*D))*sin(w1*time) &
+       +A2*exp(-u/(2._r8*D))*sin(w2*time)
    else
-     ans=c0+A1*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds1)* &
+     ans=c0+A1*exp(-u/(2._r8*D)-sqrt(2._r8)*z/(4._r8*D)*ds1)* &
        sin(w1*time-sqrt(2._r8)*w1*z/ds1) &
-       +A2*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds2)* &
+       +A2*exp(-u/(2._r8*D)-sqrt(2._r8)*z/(4._r8*D)*ds2)* &
        sin(w2*time-sqrt(2._r8)*w2*z/ds2)
    endif
    end function conc2
