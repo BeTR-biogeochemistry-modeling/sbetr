@@ -123,15 +123,16 @@ contains
   numfls = ncols
   allocate(filters(1:numfls));filters(:)=(/(jj,jj=1,ncols)/)
   allocate(jtops(1:numfls)); jtops(:)=1
-  betr_nlevsno = nlevsno
-  betr_nlevsoi = nlevsoi
 
   !set up grid
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
-  call init_elm_vertgrid(grid_data%nlevgrnd)
-  !do not place the following line in other place, because nlevtrc_soil is updated right above
+  betr_nlevsno = nlevsno
+  betr_nlevsoi = nlevsoi
   bounds%ubj  = nlevtrc_soil
+
+  call init_clm_vertgrid(grid_data%nlevgrnd)
+
   call initialize(bounds)
 
   !read forcing
