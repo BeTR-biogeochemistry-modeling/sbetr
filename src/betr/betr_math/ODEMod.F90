@@ -109,6 +109,7 @@ contains
     real(r8), intent(out) :: y(neq)     !return value
 
     procedure(odebbks) :: odefun
+
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: f1(neq)
@@ -569,6 +570,7 @@ contains
     real(r8), intent(in)  :: t
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
+
     ! !LOCAL VARIABLES:
     real(r8) :: k1(neq)
     real(r8) :: k2(neq)
@@ -577,6 +579,7 @@ contains
     real(r8) :: kt(neq)
     real(r8) :: ti, dt05, a
     integer :: n
+
     procedure(oderkx) :: odefun
 
     ti = t
@@ -637,6 +640,20 @@ contains
     real(r8), intent(in)  :: t
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
+
+    interface
+      subroutine odefun(extra, y, dt2, tt,  neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
+
     ! !LOCAL VARIABLES:
     real(r8) :: k1(neq)
     real(r8) :: k2(neq)
@@ -707,9 +724,9 @@ contains
           tt=tt+dt2
           y=yc
        else
-          print*,'get coarse grid solution'
+!          print*,'get coarse grid solution'
           call odefun(extra, y, dt2, tt, nprimeq, neq, f)
-          print*,'ebbks'
+!          print*,'ebbks'
           call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
 
           !get fine grid solution
