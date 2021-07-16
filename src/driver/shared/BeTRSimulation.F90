@@ -2070,7 +2070,11 @@ contains
   use restUtilMod    , only : restartvar
   use ncdio_pio      , only : file_desc_t,ncd_double, ncd_int
   use elm_varctl     , only : spinup_state
+#if (defined SBETR)  
   use elm_time_manager, only : get_nstep
+#else
+  use clm_time_manager, only : get_nstep
+#endif  
   use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
   use tracer_varcon  , only : reaction_method
   implicit none
