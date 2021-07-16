@@ -42,6 +42,12 @@ macro(set_up_compilers)
   # Fortran compiler flags.
   #
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    message ("CMAKE_Fortran_COMPILER_ID ${CMAKE_Fortran_COMPILER_ID}")
+    message ("CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}")
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10.1.0")
+      message(STATUS "Netcdf does not work the assigned fortran compiler")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w -fallow-argument-mismatch")
+    endif()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -W -Wall -std=gnu -pedantic")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DCPRGNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-variable")
