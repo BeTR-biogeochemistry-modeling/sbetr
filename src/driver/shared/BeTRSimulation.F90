@@ -612,13 +612,13 @@ contains
     character(len=*), intent(in) :: flag
 
     integer :: c
-    print*,'open restart file ',trim(fname), ' for ',trim(flag)
+    write(iulog,*)'open restart file ',trim(fname), ' for ',trim(flag)
     if(trim(flag)=='read')then
       call ncd_pio_openfile(ncid, trim(fname), ncd_nowrite)
     elseif(trim(flag)=='write')then
       call ncd_pio_createfile(ncid, trim(fname))
     endif
-    print*,'creating file succeeded'
+    write(iulog,*)'creating file succeeded'
 
   end subroutine BeTRSimulationRestartOpen
 
@@ -777,8 +777,8 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status()) then
-      print*,this%bsimstatus%cindex
-      print*,trim(this%bsimstatus%print_msg())
+      write(iulog,*)this%bsimstatus%cindex
+      write(iulog,*)trim(this%bsimstatus%print_msg())
       call endrun(msg=trim(this%bsimstatus%print_msg()))
     endif
   end subroutine BeTRSimulationMassBalanceCheck
@@ -842,6 +842,7 @@ contains
       this%hist_record = get_dim_len(this%hist_filename, 'time')
       return
     endif
+    write(iulog,*)'open hist file ',trim(this%hist_filename)
     call ncd_pio_createfile(ncid, this%hist_filename)
 
     call hist_file_create(ncid, betr_nlevtrc_soil, ncol)
@@ -1924,7 +1925,7 @@ contains
   !assign initial conditions
   call this%BeTRSetBounds(betr_bounds)
 
-  print*,'offline restart ', flag
+  write(iulog,*)'offline restart ', flag
   if(flag=='define')then
     ! print*,'define restart file'
     ! define the dimensions
@@ -1982,7 +1983,7 @@ contains
         this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
 
-    print*,'write restart file'
+    write(iulog,*)'write restart file'
     do jj = 1, this%num_rest_state1d
        ptr1d => this%rest_states_1d(:, jj)
        call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)

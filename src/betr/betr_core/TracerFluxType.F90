@@ -238,8 +238,7 @@ contains
            default='inactive')
 
           call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_INFIL', units='mol/m2/s',     &
-           avgflag='A', long_name='infiltration for '//trim(tracername),            &
-           default='inactive')
+           avgflag='A', long_name='infiltration for '//trim(tracername))
 
           call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_FLX_NETPRO_vr',&
            units='mol/m3/s', type2d='levtrc', avgflag='A', &
