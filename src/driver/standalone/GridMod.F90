@@ -159,7 +159,7 @@ contains
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
     use betr_constants, only : betr_string_length_long
-
+    use elm_varpar,     only : nlevtrc_soil, nlevsoi, nlevgrnd
     implicit none
 
     class(betr_grid_type),                    intent(inout) :: this
@@ -170,19 +170,19 @@ contains
     character(len=betr_string_length)      :: grid_data_format, grid_type_str
     character(len=betr_filename_length)    :: grid_data_filename
     character(len=betr_string_length_long) :: ioerror_msg
-    integer                                :: nlevgrnd
     real(r8)                               :: delta_z
 
     !-----------------------------------------------------------------------
 
     namelist / betr_grid /                                    &
          grid_type_str, grid_data_filename, grid_data_format, &
-         nlevgrnd, delta_z
+         nlevgrnd, delta_z, nlevtrc_soil
 
     grid_data_format   = ''
     grid_data_filename = ''
     grid_type_str      = clm_str
     nlevgrnd           = 15 ! default to clm grid
+    nlevtrc_soil       = 10
     delta_z            = bspval
 
     ! ----------------------------------------------------------------------
@@ -216,6 +216,7 @@ contains
     this%grid_data_filename = trim(grid_data_filename)
     this%nlevgrnd = nlevgrnd
     this%delta_z = delta_z
+    nlevsoi            = nlevtrc_soil
 
   end subroutine ReadNamelist
 

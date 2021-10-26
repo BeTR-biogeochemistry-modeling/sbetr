@@ -50,8 +50,9 @@ contains
   character(len=*), intent(in) :: long_name
   character(len=*),optional, intent(in) :: default
 
-  character(len=12) :: default_loc = "active"
+  character(len=12) :: default_loc
 
+  default_loc = "active"
   if(present(default))then
     default_loc=trim(default)
   endif
@@ -83,8 +84,9 @@ contains
   character(len=*), intent(in) :: long_name
   character(len=*),optional, intent(in) :: default
 
-  character(len=12) :: default_loc = "active"
+  character(len=12) :: default_loc
 
+  default_loc = "active"
   if(present(default))then
     default_loc=trim(default)
   endif
@@ -97,8 +99,6 @@ contains
     this%hist1d_var(num1d)%long_name=trim(long_name)
     this%hist1d_var(num1d)%use_default=trim(default_loc)
   endif
-
-
 
   end subroutine add_hist_var1d
   !-----------------------------------------------------------------------
@@ -122,7 +122,7 @@ contains
 
   do jj = 1, this%num_hist2d
     call hist_var_init(this%hist2d_var(jj))
-  enddo 
+  enddo
   end subroutine alloc_hist_list
   !-----------------------------------------------------------------------
 

@@ -5,9 +5,17 @@ integrated into land surface models such as CLM and ALM.
 
 Jinyun Tang, jinyuntang@lbl.gov
 
-References
+# References
 
 Tang, J. Y., Riley, W. J., Koven, C. D., and Subin, Z. M.: CLM4-BeTR, a generic biogeochemical transport and reaction module for CLM4: model development, evaluation, and application, Geosci. Model Dev., 6, 127-140, doi:10.5194/gmd-6-127-2013, 2013.
+
+Tang, J. Y., and Riley, W. J.: Predicted Land Carbon Dynamics Are Strongly Dependent on the Numerical Coupling of Nitrogen Mobilizing and Immobilizing Processes: A Demonstration with the E3SM Land Model, Earth Interact, 22, ARTN 11
+10.1175/EI-D-17-0023.s1, 2018.
+
+
+# Basic code structure
+
+The source code is under the directory "./src", where each nested subdirectory contains a readme.md file that self-explains the use of different source code. To general users, three subdirectories are of the most interest, which are "./src/Applications", "./src/driver", and "./src/jarmodel". "./src/Applications" are for users to design their own soil biogeochemistry models. "./src/driver" contains APIs to couple with user specified ecosystem models. "./src/jarmodel" is to run soil biogeochemistry models in the single layer mode.
 
 ## Building
 
@@ -255,7 +263,7 @@ directory where sbetr is executed!
 The example is set with mock run that transport five tracers: N2, O2,
 AR, CO2, CH4 and DOC
 
-## create customized testing runs
+## Create customized testing runs
   ```INI
   # Use the python script
 
@@ -283,7 +291,7 @@ AR, CO2, CH4 and DOC
 
   # single layer mode
 
-  ./sbetr reaction.jar.sbetr.nl
+  ./jarmodel reaction.jar.sbetr.nl
   ```
 ## Development
 

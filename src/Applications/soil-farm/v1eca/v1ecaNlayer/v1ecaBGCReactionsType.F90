@@ -555,14 +555,14 @@ contains
 !    if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_no3x, &
-         trc_name='NO3x', is_trc_mobile=.true., is_trc_advective = .true., &
+         trc_name='NO3x', is_trc_mobile=.false., is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_no3x, trc_group_mem = 1, is_trc_volatile=.false., &
          trc_vtrans_scal=0._r8)
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
-         trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), &
-         is_trc_advective = .true. .and. (.not. fix_ip), &
+         trc_name='P_SOL', is_trc_mobile=.false. .and. (.not. fix_ip), &
+         is_trc_advective = .false. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
          is_trc_adsorb = .false., trc_vtrans_scal=0._r8)
     if(bstatus%check_status())return
@@ -1357,6 +1357,7 @@ contains
 !      print*,'sefok,j',j,this%v1eca_forc(c,j)%decomp_k(1:ncentpools)
       this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
       this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
+      this%v1eca_forc(c,j)%o_scalar = biophysforc%c12flx%in_o_scalar(c,j)
       !litter C
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1)/catomw)
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2)/catomw)
@@ -2297,7 +2298,7 @@ contains
         enddo
 
         !soluble P
-        biogeo_state%p31state_vars%sminp_vr_col(c,j) = biogeo_state%p31state_vars%sminp_vr_col(c,j) + patomw * &
+        biogeo_state%p31state_vars%sminp_vr_col(c,j) = patomw * &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)
 
         !mineral nitrogen

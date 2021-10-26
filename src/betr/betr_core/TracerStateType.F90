@@ -173,6 +173,9 @@ contains
           call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
            avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracername))
 
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRACER_ERR', units='mol m-3', &
+               avgflag='A', long_name='mass balance error for tracer '//trim(tracername))
+
           if(jj<= ngwmobile_tracers)then
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRACER_CONC_SURFWATER', units='mol m-3', &
@@ -205,6 +208,8 @@ contains
               avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracername), &
               default='inactive')
         enddo
+        !when it==1, add_hist_varxd count number of variables.
+        !when it==2, add_hist_varxd add variable properties
         if(it==1)call this%alloc_hist_list(num1d, num2d)
       enddo
     end associate
@@ -415,6 +420,7 @@ contains
   do jj = 1, ntracers
     state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_conc_mobile_col(begc:endc, lbj:ubj, jj)
 
+    state_1d(begc:endc,addone(idtemp1d)) = this%errtracer_col(begc:endc,jj)
     if(jj<= ngwmobile_tracers)then
 
       state_1d(begc:endc,addone(idtemp1d)) = this%tracer_conc_surfwater_col(begc:endc,jj)

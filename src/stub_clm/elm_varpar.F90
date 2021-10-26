@@ -4,7 +4,7 @@ module elm_varpar
   save
 
   integer, parameter :: nlevsno     =   5     ! maximum number of snow layers
-  integer, parameter :: nlevtrc_soil = 10
+  integer  :: nlevtrc_soil = 10
   integer  :: nlevsoi = 10
   integer  :: nlevgrnd = 15
   integer  :: maxpatch_glcmec= -1    !some dumb number for stand alone betr
@@ -15,11 +15,11 @@ module elm_varpar
   integer, parameter :: nsoilorder  =  15     ! number of soil orders
 
   integer :: natpft_size        ! Number of Patches on natural veg landunit (including bare ground)
-  integer :: nlevdecomp_full = nlevtrc_soil
+  integer :: nlevdecomp_full = 10
   integer :: cft_size           ! Number of Patches on crop landunit
   integer :: numpft
   logical :: crop_prog   = .false.  ! If prognostic crops is turned on
-  integer :: nlevdecomp  = nlevtrc_soil
+  integer :: nlevdecomp  = 10
   integer :: ndecomp_pools
   integer :: ndecomp_cascade_transitions
   integer :: i_met_lit = 1

@@ -29,6 +29,7 @@ implicit none
     real(r8), pointer :: in_decomp_cpools_vr_col(:,:,:) => null()
     real(r8), pointer :: in_t_scalar(:,:) => null()
     real(r8), pointer :: in_w_scalar(:,:) => null()
+    real(r8), pointer :: in_o_scalar(:,:) => null()
     real(r8), pointer :: rt_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
@@ -64,6 +65,7 @@ implicit none
     SPVAL_ALLOC(this%in_decomp_cpools_vr_col(begc:endc,lbj:ubj,1:7))
     SPVAL_ALLOC(this%in_w_scalar(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%in_t_scalar(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%in_o_scalar(begc:endc,lbj:ubj))
 !    return
 !  endif
   SPVAL_ALLOC(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))

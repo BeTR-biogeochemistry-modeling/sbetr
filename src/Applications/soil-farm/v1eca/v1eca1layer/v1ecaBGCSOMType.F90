@@ -901,7 +901,7 @@ contains
    cwd            => v1eca_bgc_index%cwd                  & !
   )
   do jj =1, 7
-    k_decay(jj) = decomp_k(jj)* o_scalar
+    k_decay(jj) = decomp_k(jj)
   enddo
 
   end associate

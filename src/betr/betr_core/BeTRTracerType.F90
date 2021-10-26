@@ -325,12 +325,16 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   this%groupid          (trc_id)    = trc_group_id
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
   this%is_advective     (trc_id)    = is_trc_advective
+  !override the advective option
+  if(.not. is_trc_mobile)this%is_advective(trc_id)=.false.
 
   if(present(do_mass_balchk))then
     this%do_mass_balchk(trc_id)=do_mass_balchk
   endif
   if(present(is_trc_diffusive)) then
     this%is_diffusive (trc_id) = is_trc_diffusive
+    !override the diffusion option
+    if(.not. is_trc_mobile)this%is_diffusive (trc_id)=.false.
   endif
   if(present(is_trc_volatile))then
     this%is_volatile      (trc_id)    = is_trc_volatile
