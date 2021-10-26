@@ -7,3 +7,9 @@
 [submodule "3rd-party/netcdf-c"]
 	path = 3rd-party/netcdf-c
 	url = https://github.com/jinyun1tang/netcdf-c
+[submodule "3rd-party/zlib"]
+	path = 3rd-party/zlib
+	url = git@github.com:madler/zlib.git
+[submodule "3rd-party/hdf5"]
+	path = 3rd-party/hdf5
+	url = git@github.com:HDFGroup/hdf5.git
