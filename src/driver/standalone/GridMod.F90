@@ -159,7 +159,7 @@ contains
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
     use betr_constants, only : betr_string_length_long
-    use clm_varpar,     only : nlevtrc_soil, nlevsoi, nlevgrnd
+    use elm_varpar,     only : nlevtrc_soil, nlevsoi, nlevgrnd
     implicit none
 
     class(betr_grid_type),                    intent(inout) :: this
