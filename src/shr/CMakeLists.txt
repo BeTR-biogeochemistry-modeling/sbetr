@@ -24,7 +24,7 @@ add_betr_library(betr_shr ${BETR_SHR_SOURCES})
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
 
 set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES} PARENT_SCOPE)
-set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES})
+#set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)
 
