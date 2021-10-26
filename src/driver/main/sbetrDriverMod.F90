@@ -120,9 +120,12 @@ contains
   bounds%begl = 1
   bounds%endl = 1
   bounds%lbj  = 1
+  bounds%ubj  = nlevtrc_soil
   numfls = ncols
   allocate(filters(1:numfls));filters(:)=(/(jj,jj=1,ncols)/)
   allocate(jtops(1:numfls)); jtops(:)=1
+  betr_nlevsno = nlevsno
+  betr_nlevsoi = nlevsoi
 
   !set up grid
   allocate(grid_data)
