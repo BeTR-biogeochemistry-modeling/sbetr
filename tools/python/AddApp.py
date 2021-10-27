@@ -1,9 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 
 import os,time,sys,argparse
 import AppTools
-
+import pathlib
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--newapp', dest="newapp", metavar='newapp', type=str, nargs=1, default=[""],
@@ -13,10 +13,8 @@ parser.add_argument('--newapp', dest="newapp", metavar='newapp', type=str, nargs
 args = parser.parse_args()
 
 newapp=args.newapp[0]
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
-mdir,chdir=dir_path.split('/sbetr')
+dir_path=str(pathlib.Path(__file__).parent.resolve())
+mdir,chdir=dir_path.split('/sbetr/')
 sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #check existence of the app to cloned
@@ -24,8 +22,8 @@ sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 if newapp:
     AppTools.add_case_file(mdir,newapp)
-    print "Clone finished!"
-    print "Check app in "+sfarm_dir+'/'+newapp
+    print ("Clone finished!")
+    print ("Check app in "+sfarm_dir+'/'+newapp)
 
 else:
-    print "please define new app name"
+    print ("please define new app name")

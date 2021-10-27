@@ -3,6 +3,7 @@
 
 import os,time,sys,argparse
 import AppTools
+import pathlib
 
 def copy_file(fromf,tof, fromapp, toapp):
     """
@@ -43,9 +44,9 @@ fromapp=args.fromapp[0]
 
 toapp=args.toapp[0]
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path=str(pathlib.Path(__file__).parent.resolve())
 
-mdir,chdir=dir_path.split('/sbetr')
+mdir,chdir=dir_path.split('/sbetr/')
 sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #check existence of the app to cloned
