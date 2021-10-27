@@ -120,7 +120,6 @@ contains
   bounds%begl = 1
   bounds%endl = 1
   bounds%lbj  = 1
-  bounds%ubj  = nlevtrc_soil
   numfls = ncols
   allocate(filters(1:numfls));filters(:)=(/(jj,jj=1,ncols)/)
   allocate(jtops(1:numfls)); jtops(:)=1
@@ -131,7 +130,8 @@ contains
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
   call init_elm_vertgrid(grid_data%nlevgrnd)
-
+  !do not place the following line in other place, because nlevtrc_soil is updated right above
+  bounds%ubj  = nlevtrc_soil
   call initialize(bounds)
 
   !read forcing
