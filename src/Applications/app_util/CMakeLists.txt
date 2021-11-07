@@ -28,6 +28,9 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaNlay
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1eca1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaNlayer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosysPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosys1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosysNlayer)
 #end_appadd
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})

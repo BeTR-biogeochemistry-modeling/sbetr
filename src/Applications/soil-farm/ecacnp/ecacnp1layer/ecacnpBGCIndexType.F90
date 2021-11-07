@@ -254,12 +254,12 @@ implicit none
   call list_insert(list_name, trim(prefix)//'_p',vid, itype=var_state_type)
   call list_insert(list_unit, 'mol P m-3',uid)
   if(use_c13)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid, itype=var_state_type)
-    vid=vid+1;call list_insert(list_unit, 'mol C13 m-3',uid)
+    call list_insert(list_name, trim(prefix)//'_c13',vid, itype=var_state_type)
+    call list_insert(list_unit, 'mol C13 m-3',uid)
   endif
   if(use_c14)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid, itype=var_state_type)
-    vid=vid+1;call list_insert(list_unit, 'mol C14 m-3',uid)
+    call list_insert(list_name, trim(prefix)//'_c14',vid, itype=var_state_type)
+    call list_insert(list_unit, 'mol C14 m-3',uid)
   endif
   end subroutine add_ompool_name
 

@@ -6,5 +6,6 @@ add_subdirectory(simic)
 add_subdirectory(keca)
 add_subdirectory(ch4soil)
 add_subdirectory(v1eca)
+add_subdirectory(ecosys)
 #end_appadd
 set(BETR_LIBRARIES bgcfarm_util;${BETR_LIBRARIES} PARENT_SCOPE)

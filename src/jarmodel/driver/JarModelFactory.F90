@@ -29,6 +29,7 @@ contains
     use simicBGCType,  only : create_jarmodel_simicbgc
     use cdomBGCType, only : create_jarmodel_cdom
     use v1ecaBGCType, only : create_jarmodel_v1eca
+    use ecosysBGCType, only : create_jarmodel_ecosys
     !end_appadd
     use BeTRJarModel      , only : jar_model_type
     implicit none
@@ -48,6 +49,8 @@ contains
           allocate(jarmodel, source=create_jarmodel_cdom())
        case ("v1eca")
           allocate(jarmodel, source=create_jarmodel_v1eca())
+       case ("ecosys")
+          allocate(jarmodel, source=create_jarmodel_ecosys())
     !end_appadd
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
@@ -70,6 +73,7 @@ contains
     use simicParaType   , only : create_jarpars_simic
     use cdomParaType   , only : create_jarpars_cdom
     use v1ecaParaType  , only : create_jarpars_v1eca
+    use ecosysParaType  , only : create_jarpars_ecosys
     !end_appadd
     implicit none
     !ARGUMENTS
@@ -88,6 +92,8 @@ contains
           allocate(jarpars, source=create_jarpars_cdom())
        case ("v1eca")
           allocate(jarpars, source=create_jarpars_v1eca())
+       case ("ecosys")
+          allocate(jarpars, source=create_jarpars_ecosys())
     !end_appadd
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &

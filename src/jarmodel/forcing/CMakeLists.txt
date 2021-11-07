@@ -17,6 +17,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosysPara)
 #end_appadd
 include(add_betr_library)
 add_betr_library(betr_jar_forc ${BETR_JARFORC_SOURCES})

@@ -40,6 +40,7 @@ module MathfuncMod
   public :: apvb
   public :: countelm
   public :: polyval
+  public :: assign_ids
   interface apvb
     module procedure apvb_v, apvb_s
   end interface apvb
@@ -50,6 +51,9 @@ module MathfuncMod
      module procedure swap_i, swap_r, swap_rv
   end interface swap
 
+  interface assign_ids
+    module procedure assign_ids_1d, assign_ids_2d, assign_ids_3d, assign_ids_4d
+  end interface assign_ids
   !law of minimum flux based back tracing tools
   !for ODE integration, Tang and Riley, BG, 2015.
   type, public :: lom_type
@@ -796,5 +800,103 @@ contains
   enddo
   return
   end function polyval
+  !-------------------------------------------------------------------------------
+  function assign_ids_1d(arr1d, offset)result(nelm)
+  implicit none
+  integer, intent(out) :: arr1d(:)
+  integer, intent(in) :: offset
+
+  integer :: nelm
+  integer :: j1, j1l
+
+  nelm=size(arr1d)
+  do j1 = 1, j1l
+   arr1d(j1)=offset+j1
+  enddo
+
+  return
+  end function assign_ids_1d
+
+  !-------------------------------------------------------------------------------
+  function assign_ids_2d(arr2d, offset)result(nelm)
+  implicit none
+  integer, intent(out) :: arr2d(:,:)
+  integer, intent(in) :: offset
+
+  integer :: nelm
+  integer :: j1, j1l
+  integer :: j2, j2l
+
+  j1l=size(arr2d,1)
+  j2l=size(arr2d,2)
+  nelm=j1l*j2l
+
+  do j2 = 1, j2l
+  do j1 = 1, j1l
+   arr2d(j1,j2)=offset+j1+(j2-1)*j1l
+  enddo
+  enddo
+  return
+  end function assign_ids_2d
+
+  !-------------------------------------------------------------------------------
+  function assign_ids_3d(arr3d, offset)result(nelm)
+  implicit none
+  integer, intent(out) :: arr3d(:,:,:)
+  integer, intent(in) :: offset
+
+  integer :: nelm
+  integer :: j1, j1l
+  integer :: j2, j2l
+  integer :: j3, j3l
+
+  j1l=size(arr3d,1)
+  j2l=size(arr3d,2)
+  j3l=size(arr3d,3)
+
+  nelm=j1l*j2l*j3l
+
+  do j3 = 1, j3l
+  do j2 = 1, j2l
+  do j1 = 1, j1l
+   arr3d(j1,j2,j3)=offset+j1+(j2-1)*j1l+(j3-1)*j2l*j1l
+  enddo
+  enddo
+  enddo
+  return
+  end function assign_ids_3d
+
+
+  !-------------------------------------------------------------------------------
+  function assign_ids_4d(arr4d, offset)result(nelm)
+  implicit none
+  integer, intent(out) :: arr4d(:,:,:,:)
+  integer, intent(in) :: offset
+
+  integer :: nelm
+  integer :: j1, j1l
+  integer :: j2, j2l
+  integer :: j3, j3l
+  integer :: j4, j4l
+
+  j1l=size(arr4d,1)
+  j2l=size(arr4d,2)
+  j3l=size(arr4d,3)
+  j4l=size(arr4d,4)
+
+  nelm=j1l*j2l*j3l*j4l
+
+  do j4 = 1, j4l
+  do j3 = 1, j3l
+  do j2 = 1, j2l
+  do j1 = 1, j1l
+   arr4d(j1,j2,j3,j4)=offset+j1+(j2-1)*j1l+(j3-1)*j1l*j2l+(j4-1)*j3*j2l*j1l
+  enddo
+  enddo
+  enddo
+  enddo
+  return
+  end function assign_ids_4d
+
 
 end module MathfuncMod

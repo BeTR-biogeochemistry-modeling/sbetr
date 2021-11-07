@@ -66,6 +66,7 @@ contains
     use kecaBGCReactionsType  , only : keca_bgc_reaction_type
 #endif
     use v1ecaBGCReactionsType, only : v1eca_bgc_reaction_type
+    use ecosysBGCReactionsType, only : ecosys_bgc_reaction_type
     !end_appadd
 
     implicit none
@@ -97,6 +98,8 @@ contains
     case ("v1eca")
        asoibgc=.true.;allocate(bgc_reaction, source=v1eca_bgc_reaction_type())
        inloop_reaction=.false.; bgc_type='type1_bgc'
+    case ("ecosys","ecosys_mosart")
+       asoibgc=.true.;allocate(bgc_reaction, source=ecosys_bgc_reaction_type())
     !end_appadd
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
@@ -125,6 +128,7 @@ contains
   use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
 #endif
   use v1ecaPlantSoilBGCType, only : v1eca_plant_soilbgc_type
+  use ecosysPlantSoilBGCType, only : ecosys_plant_soilbgc_type
   !end_appadd
   implicit none
   ! !ARGUMENTS:
@@ -153,6 +157,8 @@ contains
 #endif
   case ("v1eca","v1eca_mosart")
      allocate(plant_soilbgc, source=v1eca_plant_soilbgc_type())
+  case ("ecosys","ecosys_mosart")
+     allocate(plant_soilbgc, source=ecosys_plant_soilbgc_type())
   !end_appadd
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
@@ -176,6 +182,7 @@ contains
   use kecaParaType     , only : keca_para
 #endif
   use v1ecaParaType   , only : v1eca_para
+  use ecosysParaType   , only : ecosys_para
   !end_appadd
   use tracer_varcon    , only : reaction_method
   use ncdio_pio        , only : file_desc_t
@@ -200,6 +207,8 @@ contains
 #endif
    case ("v1eca","v1eca_mosart")
      call v1eca_para%readPars(ncid, bstatus)
+   case ("ecosys","ecosys_mosart")
+     call ecosys_para%readPars(ncid, bstatus)
    !end_appadd
    case default
      !do nothing
@@ -221,6 +230,7 @@ contains
   use kecaParaType     , only : keca_para
 #endif
   use v1ecaParaType   , only : v1eca_para
+  use ecosysParaType   , only : ecosys_para
   !end_appadd
   use betr_constants   , only : betr_namelist_buffer_size_ext
   use BetrStatusType   , only : betr_status_type
@@ -249,6 +259,8 @@ contains
 #endif
    case ("v1eca")
      call v1eca_para%Init(bstatus)
+   case ("ecosys","ecosys_mosart")
+     call ecosys_para%Init(bstatus)
    !end_appadd
    case default
      !do nothing
@@ -267,6 +279,7 @@ contains
   use kecaParaType    , only : keca_para
 #endif
   use v1ecaParaType  , only : v1eca_para
+  use ecosysParaType  , only : ecosys_para
   !end_appadd
   use tracer_varcon   , only : reaction_method
   implicit none
@@ -285,6 +298,8 @@ contains
 #endif
   case ("v1eca","v1eca_mosart")
      call  v1eca_para%set_spinup_factor()
+  case ("ecosys","ecosys_mosart")
+     call  ecosys_para%set_spinup_factor()
   !end_appadd
   end select
 
@@ -306,6 +321,7 @@ contains
   use kecaParaType     , only : keca_para
 #endif
   use v1ecaParaType   , only : v1eca_para
+  use ecosysParaType   , only : ecosys_para,ecosys_paras
   !end_appadd
   use betr_constants   , only : betr_namelist_buffer_size_ext
   use BetrStatusType   , only : betr_status_type
@@ -337,6 +353,8 @@ contains
 !#endif
 !   case ("v1eca")
 !     call v1eca_para%Init(bstatus)
+      call ecosys_paras(fl)%Init(bstatus)
+      call ecosys_paras(fl)%deep_copy(ecosys_para)
    !end_appadd
    case default
      !do nothing

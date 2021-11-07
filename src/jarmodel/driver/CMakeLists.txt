@@ -21,6 +21,8 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1eca1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosysPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecosys/ecosys1layer)
 #end_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/jarmodel/forcing)
 
