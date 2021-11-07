@@ -298,7 +298,7 @@ contains
 #endif
   case ("v1eca","v1eca_mosart")
      call  v1eca_para%set_spinup_factor()
-  case ("ecosys","ecosys_mosart")
+  case ("ecosys")
      call  ecosys_para%set_spinup_factor()
   !end_appadd
   end select
@@ -353,8 +353,13 @@ contains
 !#endif
 !   case ("v1eca")
 !     call v1eca_para%Init(bstatus)
+    case ("ecosys")
+      allocate(ecosys_paras(begc:endc))
+      nparcols=endc-begc+1
+      do fl = begc, endc
       call ecosys_paras(fl)%Init(bstatus)
       call ecosys_paras(fl)%deep_copy(ecosys_para)
+      enddo
    !end_appadd
    case default
      !do nothing
