@@ -1,9 +1,15 @@
-[submodule "3rd-party/pfunit"]
-	path = 3rd-party/pfunit
-	url = git://git.code.sf.net/p/pfunit/code
 [submodule "3rd-party/zlib"]
 	path = 3rd-party/zlib
 	url = git@github.com:madler/zlib.git
 [submodule "3rd-party/hdf5"]
 	path = 3rd-party/hdf5
 	url = git@github.com:HDFGroup/hdf5.git
+[submodule "3rd-party/netcdf-c"]
+	path = 3rd-party/netcdf-c
+	url = https://github.com/jinyun1tang/netcdf-c.git
+[submodule "3rd-party/netcdf-fortran"]
+	path = 3rd-party/netcdf-fortran
+	url = https://github.com/jinyun1tang/netcdf-fortran.git
+[submodule "3rd-party/3rd-party/pfunit"]
+	path = 3rd-party/3rd-party/pfunit
+	url = https://github.com/jinyun1tang/pFUnit.git
