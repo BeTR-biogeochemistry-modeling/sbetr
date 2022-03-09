@@ -13,6 +13,8 @@ Tang, J. Y., and Riley, W. J.: Predicted Land Carbon Dynamics Are Strongly Depen
 10.1175/EI-D-17-0023.s1, 2018.
 
 
+Tang, J., Riley, W. J., and Zhu, Q.: Supporting hierarchical soil biogeochemical modeling: version 2 of the Biogeochemical Transport and Reaction model (BeTR-v2), Geosci. Model Dev., 15, 1619–1632, https://doi.org/10.5194/gmd-15-1619-2022, 2022.
+
 # Basic code structure
 
 The source code is under the directory "./src", where each nested subdirectory contains a readme.md file that self-explains the use of different source code. To general users, three subdirectories are of the most interest, which are "./src/Applications", "./src/driver", and "./src/jarmodel". "./src/Applications" are for users to design their own soil biogeochemistry models. "./src/driver" contains APIs to couple with user specified ecosystem models. "./src/jarmodel" is to run soil biogeochemistry models in the single layer mode.
@@ -47,7 +49,7 @@ Requirements for configuring and building BeTR:
 
   * gcc - 5.3
 
-* python 2.7
+* python 3.10
 
 All third party dependancies for building and running standalone BeTR
 are included in the 3rd-party directory.
