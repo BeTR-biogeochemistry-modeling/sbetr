@@ -1,7 +1,7 @@
 module sbetrDriverMod
 !
 ! DESCRIPTION
-! module holding subroutines to do out of clm betr application
+! module holding subroutines to do out of elm betr application
 ! created by Jinyun Tang
   use shr_kind_mod , only : r8 => shr_kind_r8
   use BeTR_TimeMod , only : betr_time_type
@@ -131,7 +131,7 @@ contains
   betr_nlevsoi = nlevsoi
   bounds%ubj  = nlevtrc_soil
 
-  call init_clm_vertgrid(grid_data%nlevgrnd)
+  call init_elm_vertgrid(grid_data%nlevgrnd)
 
   call initialize(bounds)
 

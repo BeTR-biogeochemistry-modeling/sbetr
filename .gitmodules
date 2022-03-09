@@ -10,6 +10,6 @@
 [submodule "3rd-party/netcdf-fortran"]
 	path = 3rd-party/netcdf-fortran
 	url = https://github.com/jinyun1tang/netcdf-fortran.git
-[submodule "3rd-party/3rd-party/pfunit"]
-	path = 3rd-party/3rd-party/pfunit
+[submodule "3rd-party/pfunit"]
+	path = 3rd-party/pfunit
 	url = https://github.com/jinyun1tang/pFUnit.git
