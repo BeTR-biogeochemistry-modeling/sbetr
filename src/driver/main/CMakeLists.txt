@@ -19,7 +19,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
 include_directories(${CMAKE_BINARY_DIR}/src/driver/shared)
-include_directories(${CMAKE_BINARY_DIR}/src/driver/alm)
+include_directories(${CMAKE_BINARY_DIR}/src/driver/elm)
 include_directories(${CMAKE_BINARY_DIR}/src/driver/clm)
 include_directories(${CMAKE_BINARY_DIR}/src/driver/standalone)
 

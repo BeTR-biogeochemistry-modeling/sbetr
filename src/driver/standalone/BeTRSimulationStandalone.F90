@@ -4,7 +4,7 @@ module BeTRSimulationStandalone
   !  BeTR standalone simulation class.
   !
   !  BeTR simulation class are API definitions, mapping data
-  !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
+  !  structures from a specific LSM, e.g. CLM, ELM, into BeTR data
   !  structures. The standalone class use BeTR data structures
   !  natively, so is mapping BeTR to BeTR. This class shouldn't be
   !  doing much.
@@ -289,11 +289,11 @@ contains
     carbonflux_vars,  c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, phosphorusflux_vars, &
     PlantMicKinetics_vars)
 
-  !read in biogeochemical fluxes from alm for soil bgc modeling
+  !read in biogeochemical fluxes from elm for soil bgc modeling
   !these are C, N and P fluxes from root input, surface litter input
   !atmospheric deposition, fire (negative), and fertilization
   !Because of possible harvest activity that is
-  !related to dynamic land use, input profiles are computed in alm.
+  !related to dynamic land use, input profiles are computed in elm.
   !
   use ColumnType         , only : column_type
   use PatchType          , only : patch_type
@@ -477,7 +477,7 @@ contains
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
     c12flux_vars%som_c_runoff(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
 
-    !the following is for consistency with the ALM definitation, which computes
+    !the following is for consistency with the ELM definitation, which computes
     !som_c_leached_col as a numerical roundoff
     c12flux_vars%som_c_leached(c)=-c12flux_vars%som_c_leached(c)
     c12flux_vars%co2_soi_flx(c) = this%biogeo_flux(c)%c12flux_vars%co2_soi_flx_col(c_l)
@@ -511,7 +511,7 @@ contains
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
     n14flux_vars%nh3_soi_flx(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
     n14flux_vars%som_n_runoff(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
-    !the following is for consistency with the ALM definitation, which computes
+    !the following is for consistency with the ELM definitation, which computes
     !som_n_leached_col as a numerical roundoff
     n14flux_vars%som_n_leached(c) = - n14flux_vars%som_n_leached(c)
 
@@ -536,7 +536,7 @@ contains
         this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
     p31flux_vars%som_p_runoff(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
-    !the following is for consistency with the ALM definitation, which computes
+    !the following is for consistency with the ELM definitation, which computes
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached(c) = -p31flux_vars%som_p_leached(c)
 
@@ -725,7 +725,7 @@ contains
   enddo
 
   !the following parameters are specific to ECACNP, and I assume they are
-  !grid specific as they currently used in alm-cnp.
+  !grid specific as they currently used in elm-cnp.
   do j =1, betr_bounds%ubj
     do fc = 1, num_surfc
       c = filter_soilc(fc)

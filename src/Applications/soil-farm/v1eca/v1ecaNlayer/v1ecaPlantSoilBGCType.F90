@@ -70,7 +70,7 @@ module v1ecaPlantSoilBGCType
   ! !DESCRIPTION:
   ! template for init_betrbgc
   !
-  ! here I call alm instances directly?
+  ! here I call elm instances directly?
   ! !USES:
   use BeTR_decompMod       , only : betr_bounds_type
   implicit none

@@ -4,7 +4,7 @@ module BeTRSimulation
   !  BeTR simulation base class.
   !
   !  BeTR simulation class are API definitions, mapping data
-  !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
+  !  structures from a specific LSM, e.g. CLM, ELM, into BeTR data
   !  structures.
   !
 
@@ -919,14 +919,14 @@ contains
 
         timef=this%betr_time%get_cur_timef()/86400._r8;call ncd_putvar(ncid, "time", this%hist_record, timef)
 
-        do c = bounds%begc, bounds%endc
-          call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:ubj))
-        enddo
+!        do c = bounds%begc, bounds%endc
+         call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(bounds%begc:bounds%endc:c, 1:ubj))
+!        enddo
 
-        call this%hist_output_states(ncid, this%hist_record, betr_bounds, numf, filter, ubj, &
+        call this%hist_output_states(ncid, this%hist_record, bounds, numf, filter, ubj, &
             this%num_hist_state1d, this%num_hist_state2d)
 
-        call this%hist_output_fluxes(ncid, this%hist_record, betr_bounds, numf, filter, ubj, &
+        call this%hist_output_fluxes(ncid, this%hist_record, bounds, numf, filter, ubj, &
            this%num_hist_flux1d, this%num_hist_flux2d)
 
         call ncd_pio_closefile(ncid)
@@ -1678,7 +1678,7 @@ contains
   integer, intent(in) :: record
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
-  type(betr_bounds_type)           , intent(in)    :: bounds               ! bounds
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
   integer           ,     intent(in)   :: num_flux1d
   integer           ,     intent(in)   :: num_flux2d
   type(file_desc_t) ,     intent(inout)   :: ncid
@@ -1782,7 +1782,7 @@ contains
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: record
-  type(betr_bounds_type)           , intent(in)    :: bounds               ! bounds
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: betr_nlevtrc_soil
@@ -2071,11 +2071,11 @@ contains
   use restUtilMod    , only : restartvar
   use ncdio_pio      , only : file_desc_t,ncd_double, ncd_int
   use elm_varctl     , only : spinup_state
-#if (defined SBETR)  
+#if (defined SBETR)
   use elm_time_manager, only : get_nstep
 #else
   use clm_time_manager, only : get_nstep
-#endif  
+#endif
   use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
   use tracer_varcon  , only : reaction_method
   implicit none

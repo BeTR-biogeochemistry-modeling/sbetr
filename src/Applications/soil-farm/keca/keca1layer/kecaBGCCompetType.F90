@@ -244,7 +244,7 @@ contains
 
   !given P is under competitation by microbes, plants and mineral surfaces
   !the definitation of P limitation is quite ambiguous. Following what
-  !is done in ALM-ECA-CNP and ALM-CNP, P limitation is only applied
+  !is done in ELM-ECA-CNP and ELM-CNP, P limitation is only applied
   !to biological uptake. P-limitation to mineral sorption is not
   !considered.
 

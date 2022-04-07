@@ -1,7 +1,7 @@
-module BeTRSimulationALM
+module BeTRSimulationELM
   !
   ! !DESCRIPTION:
-  !  API for using BeTR in ALM
+  !  API for using BeTR in ELM
   !
   ! !USES:
   !
@@ -63,55 +63,55 @@ module BeTRSimulationALM
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
-  type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
+  type, public, extends(betr_simulation_type) :: betr_simulation_elm_type
    private
      type(calibration_type) :: calibration_vpars
    contains
-     procedure :: InitOnline                        => ALMInit
-     procedure :: Init                              => ALMInitOffline
-     procedure, public :: StepWithoutDrainage       => ALMStepWithoutDrainage
-     procedure, public :: StepWithDrainage          => ALMStepWithDrainage
-     procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
+     procedure :: InitOnline                        => ELMInit
+     procedure :: Init                              => ELMInitOffline
+     procedure, public :: StepWithoutDrainage       => ELMStepWithoutDrainage
+     procedure, public :: StepWithDrainage          => ELMStepWithDrainage
+     procedure, public :: SetBiophysForcing         => ELMSetBiophysForcing
      !unique subroutines
-     procedure, public :: CalcDewSubFlux            => ALMCalcDewSubFlux
-     procedure, public :: CalcSmpL                  => ALMCalcSmpL
-     procedure, public :: PlantSoilBGCSend          => ALMBetrPlantSoilBGCSend
-     procedure, public :: RetriveBGCInput           => ALMBeTRRetriveBGCInput
-     procedure, public :: PlantSoilBGCRecv          => ALMBetrPlantSoilBGCRecv
-     procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
-     procedure, public :: set_active                => ALMset_active
-     procedure, public :: OutLoopSoilBGC            => ALMOutLoopSoilBGC
-     procedure, public :: EnterOutLoopBGC           => ALMEnterOutLoopBGC
-     procedure, public :: ExitOutLoopBGC            => ALMExitOutLoopBGC
+     procedure, public :: CalcDewSubFlux            => ELMCalcDewSubFlux
+     procedure, public :: CalcSmpL                  => ELMCalcSmpL
+     procedure, public :: PlantSoilBGCSend          => ELMBetrPlantSoilBGCSend
+     procedure, public :: RetriveBGCInput           => ELMBeTRRetriveBGCInput
+     procedure, public :: PlantSoilBGCRecv          => ELMBetrPlantSoilBGCRecv
+     procedure, public :: DiagnoseLnd2atm           => ELMDiagnoseLnd2atm
+     procedure, public :: set_active                => ELMset_active
+     procedure, public :: OutLoopSoilBGC            => ELMOutLoopSoilBGC
+     procedure, public :: EnterOutLoopBGC           => ELMEnterOutLoopBGC
+     procedure, public :: ExitOutLoopBGC            => ELMExitOutLoopBGC
      procedure, private:: set_transient_kinetics_par
      procedure, private:: set_vegpar_calibration
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
      procedure, public :: checkpmassyes
      procedure, public :: do_bgc_type
-  end type betr_simulation_alm_type
+  end type betr_simulation_elm_type
 
-  public :: create_betr_simulation_alm
+  public :: create_betr_simulation_elm
 
 contains
 
 !-------------------------------------------------------------------------------
 
-  function create_betr_simulation_alm() result(simulation)
+  function create_betr_simulation_elm() result(simulation)
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(betr_simulation_alm_type), pointer :: simulation
+    class(betr_simulation_elm_type), pointer :: simulation
 
     allocate(simulation)
 
-  end function create_betr_simulation_alm
+  end function create_betr_simulation_elm
 !-------------------------------------------------------------------------------
 
   function checkpmassyes(this)result(yesno)
   use tracer_varcon, only : fix_ip
   implicit none
-  class(betr_simulation_alm_type)          , intent(inout) :: this
+  class(betr_simulation_elm_type)          , intent(inout) :: this
 
   logical :: yesno
 
@@ -125,7 +125,7 @@ contains
   use decompMod       , only : bounds_type
   use elm_varpar      , only : nlevtrc_soil
   implicit none
-  class(betr_simulation_alm_type)          , intent(inout) :: this
+  class(betr_simulation_elm_type)          , intent(inout) :: this
   type(bounds_type), intent(in) :: bounds
 
   integer :: c
@@ -146,7 +146,7 @@ contains
   function skip_balcheck(this)result(stats)
   use betr_ctrl         , only : betr_spinup_state
   implicit none
-  class(betr_simulation_alm_type)          , intent(inout) :: this
+  class(betr_simulation_elm_type)          , intent(inout) :: this
 
   logical :: stats
 
@@ -155,12 +155,12 @@ contains
   end function skip_balcheck
 !-------------------------------------------------------------------------------
 
-  subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
+  subroutine ELMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
     !DESCRIPTION
-    !Initialize BeTR for ALM
+    !Initialize BeTR for ELM
     !
     !USES
-    !data types from alm
+    !data types from elm
     use landunit_varcon , only : istcrop, istice, istsoil
     use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
@@ -171,7 +171,7 @@ contains
     use BeTR_decompMod      , only : betr_bounds_type
     use tracer_varcon       , only : do_bgc_calibration
     implicit none
-    class(betr_simulation_alm_type)          , intent(inout) :: this
+    class(betr_simulation_elm_type)          , intent(inout) :: this
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
@@ -202,15 +202,15 @@ contains
     endif
 
     if(do_bgc_calibration)call this%calibration_vpars%Init(bounds, betr_maxpatch_pft)
-  end subroutine ALMInit
+  end subroutine ELMInit
 !-------------------------------------------------------------------------------
 
-  subroutine ALMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename, case_id)
+  subroutine ELMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename, case_id)
     !DESCRIPTION
-    !Initialize BeTR for ALM
+    !Initialize BeTR for ELM
     !
     !USES
-    !data types from alm
+    !data types from elm
     use landunit_varcon , only : istcrop, istice, istsoil
     use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
@@ -221,7 +221,7 @@ contains
     use BeTR_decompMod      , only : betr_bounds_type
 
     implicit none
-    class(betr_simulation_alm_type)          , intent(inout) :: this
+    class(betr_simulation_elm_type)          , intent(inout) :: this
     character(len=*)                         , intent(in)    :: namelist_buffer
     character(len=*)                         , intent(in)    :: base_filename
     character(len=*)                         , intent(in)    :: case_id
@@ -248,9 +248,9 @@ contains
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
 
-  end subroutine ALMInitOffline
+  end subroutine ELMInitOffline
 !-------------------------------------------------------------------------------
-  subroutine ALMStepWithoutDrainage(this, bounds,  col, pft)
+  subroutine ELMStepWithoutDrainage(this, bounds,  col, pft)
    !DESCRIPTION
    !march one time step without doing drainage
    !
@@ -268,7 +268,7 @@ contains
 #endif
     implicit none
     ! !ARGUMENTS :
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(betr_simulation_elm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds ! bounds
     type(column_type)               , intent(in)    :: col ! column type
     type(patch_type)                , intent(in)    :: pft
@@ -334,17 +334,17 @@ contains
       enddo
     endif
 
-  end subroutine ALMStepWithoutDrainage
+  end subroutine ELMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine ALMset_active(this,bounds,col)
+  subroutine ELMset_active(this,bounds,col)
 
   !
   !DESCRIPTION
-  !activate columuns that are active in alm
+  !activate columuns that are active in elm
   implicit none
   ! !ARGUMENTS:
-  class(betr_simulation_alm_type) , intent(inout) :: this
+  class(betr_simulation_elm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds
   type(column_type)               , intent(in)    :: col ! column type
 
@@ -352,13 +352,13 @@ contains
   do c = bounds%begc, bounds%endc
     this%active_col(c) = (this%active_col(c) .and. col%active(c))
   enddo
-  end subroutine ALMset_active
+  end subroutine ELMset_active
   !---------------------------------------------------------------------------------
-  subroutine ALMBeTRRetriveBGCInput(this, num_surfc, filter_soilc, carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+  subroutine ELMBeTRRetriveBGCInput(this, num_surfc, filter_soilc, carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
 
 
   implicit none
-  class(betr_simulation_alm_type) , intent(inout) :: this
+  class(betr_simulation_elm_type) , intent(inout) :: this
   integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(carbonflux_type), intent(inout):: carbonflux_vars
@@ -409,9 +409,9 @@ contains
 !        this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j)
 !    enddo
 !  enddo
-  end subroutine ALMBeTRRetriveBGCInput
+  end subroutine ELMBeTRRetriveBGCInput
   !---------------------------------------------------------------------------------
-  subroutine ALMStepWithDrainage(this, bounds,  col)
+  subroutine ELMStepWithDrainage(this, bounds,  col)
    !
    !DESCRIPTION
    !interface for using diagnose land fluxes to atm and river copmonents
@@ -423,7 +423,7 @@ contains
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
     !ARGUMENTS
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(betr_simulation_elm_type) , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
     type(column_type)           , intent(in)    :: col ! column type
 
@@ -461,10 +461,10 @@ contains
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
 
-  end subroutine ALMStepWithDrainage
+  end subroutine ELMStepWithDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine ALMDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)
+  subroutine ELMDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)
    !DESCRIPTION
    ! march one step with drainage
    !
@@ -477,7 +477,7 @@ contains
     use tracer_varcon  , only : reaction_method
     implicit none
     ! !ARGUMENTS:
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(betr_simulation_elm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds
     type(column_type)               , intent(in)    :: col ! column type
     type(lnd2atm_type)              , intent(inout) :: lnd2atm_vars
@@ -538,20 +538,20 @@ contains
            c2l_scale_type= 'unity', l2g_scale_type='unity' )
     endif
     end associate
-  end subroutine ALMDiagnoseLnd2atm
+  end subroutine ELMDiagnoseLnd2atm
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCSend(this, bounds, col, pft, num_surfc,  filter_soilc, cnstate_vars, &
+  subroutine ELMBetrPlantSoilBGCSend(this, bounds, col, pft, num_surfc,  filter_soilc, cnstate_vars, &
     carbonstate_vars, carbonflux_vars,  c13state_vars, c13_cflx_vars, &
     c14state_vars, c14_cflx_vars, nitrogenstate_vars, nitrogenflux_vars, &
     phosphorusstate_vars, phosphorusflux_vars, &
     PlantMicKinetics_vars)
 
-  !read in biogeochemical fluxes from alm for soil bgc modeling
+  !read in biogeochemical fluxes from elm for soil bgc modeling
   !these are C, N and P fluxes from root input, surface litter input
   !atmospheric deposition, fire (negative), and fertilization
   !Because of possible harvest activity that is
-  !related to dynamic land use, input profiles are computed in alm.
+  !related to dynamic land use, input profiles are computed in elm.
   !
 
   use CNStateType, only : cnstate_type
@@ -563,7 +563,7 @@ contains
   use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration
   use tracer_varcon      , only : betr_nlevsoi
   implicit none
-  class(betr_simulation_alm_type), intent(inout)  :: this
+  class(betr_simulation_elm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   type(column_type) , intent(in)  :: col ! column type
   type(patch_type)  , intent(in)  :: pft ! pft type
@@ -894,16 +894,16 @@ contains
 
   end associate
   !pull in all state variables and update tracers
-  end subroutine ALMBetrPlantSoilBGCSend
+  end subroutine ELMBetrPlantSoilBGCSend
 
   !------------------------------------------------------------------------
 
-  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_surfc,  filter_soilc,&
+  subroutine ELMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_surfc,  filter_soilc,&
    c12state_vars, c12flux_vars, pf_c12flux_vars, c13state_vars, c13flux_vars, &
    c14state_vars, c14flux_vars, n14state_vars, pf_n14state_vars, n14flux_vars, &
    pf_n14flux_vars, p31state_vars, p31flux_vars, pf_p31flux_vars)
 
-  !this returns the flux back to ALM after doing soil BGC
+  !this returns the flux back to ELM after doing soil BGC
   !this specifically returns plant nutrient yield
 #if (defined SBETR)
   use elm_time_manager    , only : get_nstep
@@ -915,7 +915,7 @@ contains
   use tracer_varcon       , only : reaction_method
 
   implicit none
-  class(betr_simulation_alm_type), intent(inout)  :: this
+  class(betr_simulation_elm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   type(patch_type)            , intent(in) :: pft
   type(column_type)           , intent(in)    :: col ! column type
@@ -984,7 +984,7 @@ contains
           pf_n14flux_vars%smin_no3_to_plant(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
           pf_p31flux_vars%sminp_to_plant(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
           pf_p31flux_vars%sminp_to_plant_trans(p) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_trans_patch(pi)
-          !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
+          !compute relative n return, note the following computation is different from ELM-ECA-CNP, because
           !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
           pf_n14state_vars%pnup_pfrootc(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
           pf_c12flux_vars%tempavg_agnpp(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_agnpp_patch(pi)
@@ -1006,7 +1006,7 @@ contains
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
       c12flux_vars%som_c_runoff(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
-        !the following is for consistency with the ALM definitation, which computes
+        !the following is for consistency with the ELM definitation, which computes
         !som_c_leached_col as a numerical roundoff
       c12flux_vars%som_c_leached(c)=-c12flux_vars%som_c_leached(c)
       if(use_c13_betr)then
@@ -1037,7 +1037,7 @@ contains
       n14flux_vars%som_n_runoff(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
       n14flux_vars%nh3_soi_flx(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
 
-      !the following is for consistency with the ALM definitation, which computes
+      !the following is for consistency with the ELM definitation, which computes
       !som_n_leached_col as a numerical roundoff
       n14flux_vars%som_n_leached(c) = - n14flux_vars%som_n_leached(c)
 
@@ -1056,7 +1056,7 @@ contains
         this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
       p31flux_vars%som_p_runoff(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
-      !the following is for consistency with the ALM definitation, which computes
+      !the following is for consistency with the ELM definitation, which computes
       !som_p_leached_col as a numerical roundoff
       p31flux_vars%som_p_leached(c) = -p31flux_vars%som_p_leached(c)
       p31flux_vars%primp_to_labilep(c) = this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
@@ -1173,14 +1173,14 @@ contains
     end associate
   endif
 
-  end subroutine ALMBetrPlantSoilBGCRecv
+  end subroutine ELMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
 
-  subroutine ALMCalcDewSubFlux(this,  &
+  subroutine ELMCalcDewSubFlux(this,  &
        bounds, col, num_hydrologyc, filter_soilc_hydrologyc)
    !DESCRIPTION
     ! Calculate tracer flux from dew or/and sublimation
-    !External interface called by ALM
+    !External interface called by ELM
 
     use WaterfluxType   , only : waterflux_type
     use elm_varcon      , only : denh2o,spval
@@ -1188,7 +1188,7 @@ contains
     use betr_decompMod  , only : betr_bounds_type
     implicit none
     !ARGUMENTS
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(betr_simulation_elm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds
     type(column_type)               , intent(in)    :: col ! column type
     integer                         , intent(in)    :: num_hydrologyc ! number of column soil points in column filter_soilc
@@ -1208,10 +1208,10 @@ contains
          betr_bounds, this%betr_col(c), this%num_surfc, this%filter_soilc, &
         this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo
-  end subroutine ALMCalcDewSubFlux
+  end subroutine ELMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine ALMCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
+  subroutine ELMCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
      soilstate_vars, waterstate_vars, soil_water_retention_curve)
   !DESCRIPTION
   ! calculate soil suction potential
@@ -1222,7 +1222,7 @@ contains
   use elm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
-  class(betr_simulation_alm_type), intent(inout)  :: this
+  class(betr_simulation_elm_type), intent(inout)  :: this
   type(bounds_type)                      , intent(in)    :: bounds  ! bounds
   integer                                , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
   integer                                , intent(in)    :: numf                                              ! number of columns in column filter
@@ -1275,10 +1275,10 @@ contains
     enddo
   enddo
   end associate
-  end subroutine ALMCalcSmpL
+  end subroutine ELMCalcSmpL
 
   !------------------------------------------------------------------------
-  subroutine ALMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, pf_carbonflux_vars, &
+  subroutine ELMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, pf_carbonflux_vars, &
     waterstate_vars, waterflux_vars, pf_waterflux_vars, temperature_vars, pf_temperature_vars, &
     soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars, cnstate_vars, carbonstate_vars, phosphorusstate_vars)
@@ -1297,7 +1297,7 @@ contains
   use tracer_varcon     , only : catomw
   implicit none
   !ARGUMENTS
-  class(betr_simulation_alm_type) , intent(inout)        :: this
+  class(betr_simulation_elm_type) , intent(inout)        :: this
   type(bounds_type)               , intent(in)           :: bounds
   type(patch_type)            , intent(in) :: pft
   type(column_type)           , intent(in)    :: col ! column type
@@ -1354,7 +1354,7 @@ contains
       cp_scalar            => cnstate_vars%cp_scalar        , &
       rootfr               => soilstate_vars%rootfr_patch     &
     )
-    !the following will be ALM specific
+    !the following will be ELM specific
     !big leaf model
     !set profiles autotrohpic respiration
     do c = bounds%begc, bounds%endc
@@ -1403,7 +1403,7 @@ contains
         enddo
       enddo
   endif
-  end subroutine ALMSetBiophysForcing
+  end subroutine ELMSetBiophysForcing
 
   !------------------------------------------------------------------------
 
@@ -1413,7 +1413,7 @@ contains
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
   implicit none
-  class(betr_simulation_alm_type), intent(inout)  :: this
+  class(betr_simulation_elm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
   type(column_type)     , intent(in)    :: col ! column type
   type(patch_type)      , intent(in) :: pft
@@ -1468,7 +1468,7 @@ contains
 #endif
   use tracer_varcon      , only : lbcalib
   implicit none
-  class(betr_simulation_alm_type), intent(inout)  :: this
+  class(betr_simulation_elm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
   type(column_type)     , intent(in)    :: col ! column type
   type(patch_type)      , intent(in) :: pft
@@ -1533,7 +1533,7 @@ contains
   enddo
 
   !the following parameters are specific to ECACNP, and I assume they are
-  !grid specific as they currently used in alm-cnp.
+  !grid specific as they currently used in elm-cnp.
   if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 &
      .or. index(reaction_method, 'v1eca')/=0)then
     do j =1, betr_bounds%ubj
@@ -1577,11 +1577,11 @@ contains
 
 
 !-------------------------------------------------------------------------------
-  subroutine ALMOutLoopSoilBGC(this, bounds,  col, pft)
+  subroutine ELMOutLoopSoilBGC(this, bounds,  col, pft)
 
   implicit none
     ! !ARGUMENTS :
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(betr_simulation_elm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds ! bounds
     type(column_type)               , intent(in)    :: col ! column type
     type(patch_type)                , intent(in)    :: pft
@@ -1612,13 +1612,13 @@ contains
       endif
 
     enddo
-  end subroutine ALMOutLoopSoilBGC
+  end subroutine ELMOutLoopSoilBGC
 
 !-------------------------------------------------------------------------------
   function do_bgc_type(this, type_char)result(ans)
   use betr_ctrl, only : bgc_type
   implicit none
-  class(betr_simulation_alm_type) , intent(inout) :: this
+  class(betr_simulation_elm_type) , intent(inout) :: this
   character(len=*), intent(in) :: type_char
 
 
@@ -1630,14 +1630,14 @@ contains
 
 
 !-------------------------------------------------------------------------------
-  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, num_surfc, filter_soilc, &
+  subroutine ELMEnterOutLoopBGC(this, bounds, col, pft, num_surfc, filter_soilc, &
    c12_cstate_vars, c12_cflx_vars, c13_cstate_vars, c14_cstate_vars,  &
    nitrogenstate_vars,  phosphorusstate_vars, PlantMicKinetics_vars)
 
   use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   implicit none
-  class(betr_simulation_alm_type) , intent(inout) :: this
+  class(betr_simulation_elm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds ! bounds
   type(column_type)               , intent(in)    :: col ! column type
   type(patch_type)                , intent(in)    :: pft
@@ -1699,10 +1699,10 @@ contains
   call this%set_transient_kinetics_par(betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
 
   end associate
-  end subroutine ALMEnterOutLoopBGC
+  end subroutine ELMEnterOutLoopBGC
 
 !-------------------------------------------------------------------------------
-  subroutine ALMExitOutLoopBGC(this, bounds, col, pft, &
+  subroutine ELMExitOutLoopBGC(this, bounds, col, pft, &
     c12_cstate_vars, c12_cflx_vars, &
     c13_cstate_vars, c13_cflx_vars, &
     c14_cstate_vars, c14_cflx_vars, &
@@ -1716,7 +1716,7 @@ contains
   use clm_time_manager    , only : get_nstep
 #endif
   implicit none
-  class(betr_simulation_alm_type) , intent(inout) :: this
+  class(betr_simulation_elm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds ! bounds
   type(column_type)               , intent(in)    :: col ! column type
   type(patch_type)                , intent(in)    :: pft
@@ -1814,5 +1814,5 @@ contains
   enddo
   end associate
 
-  end subroutine ALMExitOutLoopBGC
-end module BeTRSimulationALM
+  end subroutine ELMExitOutLoopBGC
+end module BeTRSimulationELM

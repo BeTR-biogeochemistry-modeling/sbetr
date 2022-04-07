@@ -26,7 +26,7 @@ contains
     use BeTRSimulation           , only : betr_simulation_type
     use BeTRSimulationStandalone , only : create_betr_simulation_standalone
     use BeTRSimulationCLM        , only : create_betr_simulation_clm
-    use BeTRSimulationALM        , only : create_betr_simulation_alm
+    use BeTRSimulationELM        , only : create_betr_simulation_elm
     implicit none
     !ARGUMENTS
     character(len=*), intent(in)         :: simulator_name
@@ -37,8 +37,8 @@ contains
           allocate(simulator, source=create_betr_simulation_standalone())
        case ("clm")
           allocate(simulator, source=create_betr_simulation_clm())
-       case ("alm")
-          allocate(simulator, source=create_betr_simulation_alm())
+       case ("elm")
+          allocate(simulator, source=create_betr_simulation_elm())
        case default
           write(*, *) "ERROR: unknown simulator type '", &
                trim(simulator_name), "'."

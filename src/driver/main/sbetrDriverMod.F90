@@ -27,7 +27,7 @@ contains
   !
   use BeTRSimulationCLM     , only : betr_simulation_clm_type
   use BeTRSimulationStandalone, only : betr_simulation_standalone_type
-  use BeTRSimulationALM     , only : betr_simulation_alm_type
+  use BeTRSimulationELM     , only : betr_simulation_elm_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use elm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
@@ -93,7 +93,7 @@ contains
   character(len=256) :: restfile
   integer :: nstep
   logical :: do_standalone=.false.
-  logical :: do_alm=.false.
+  logical :: do_elm=.false.
   logical :: do_clm=.false.
   type(hist_bgc_type) :: histbgc
   type(histf_type) :: hist
@@ -199,9 +199,9 @@ contains
   class is (betr_simulation_standalone_type)
     print*,'simulation using standalone-betr'
     do_standalone=.true.
-  class is (betr_simulation_alm_type)
-    print*,'simulation using alm-betr'
-    do_alm=.true.
+  class is (betr_simulation_elm_type)
+    print*,'simulation using elm-betr'
+    do_elm=.true.
   class is (betr_simulation_clm_type)
     print*,'simulation using clm-betr'
     do_clm=.true.
@@ -269,7 +269,7 @@ contains
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
     select type(simulation)
-    class is (betr_simulation_alm_type)
+    class is (betr_simulation_elm_type)
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, numfls, &
         filters, temperature_vars%t_soisno, &
@@ -323,7 +323,7 @@ contains
     call simulation%StepWithoutDrainage(bounds, col, pft)
 
     select type(simulation)
-    class is (betr_simulation_alm_type)
+    class is (betr_simulation_elm_type)
 
       call simulation%PlantSoilBGCRecv(bounds, col, pft, numfls, filters,&
        carbonstate_vars, carbonflux_vars, pf_carbonflux_vars, c13state_vars, &

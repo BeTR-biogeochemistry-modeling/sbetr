@@ -1,4 +1,4 @@
-module ALMBeTRNLMod
+module ELMBeTRNLMod
 
   use shr_log_mod , only: errMsg => shr_log_errMsg
   use betr_constants , only : betr_namelist_buffer_size, betr_namelist_buffer_size_ext
@@ -232,4 +232,4 @@ contains
     !make sure P has full supply during spinup
     !if(spinup_state==1)is_phosphorus_active=.false.
     end subroutine set_betr_cnpbgc
-end module ALMBeTRNLMod
+end module ELMBeTRNLMod
