@@ -5,7 +5,7 @@
 !===================================================
 ! Flag representing compiler support of Fortran 2003's
 ! ieee_arithmetic intrinsic module.
-#if defined CPRIBM || defined CPRPGI || defined CPRINTEL ||  defined CPRCRAY || defined CPRNAG || defined CPRGNU
+#if defined CPRIBM || defined CPRPGI || defined CPRINTEL ||  defined CPRCRAY || defined CPRNAG || defined CPRGNU || defined CPRFJ
 #define HAVE_IEEE_ARITHMETIC
 #if CPRGNU && __GNUC_VERSION__ < 5
 #undef HAVE_IEEE_ARITHMETIC
@@ -320,8 +320,12 @@ end function shr_infnan_isinf_real
 elemental function shr_infnan_isposinf_double(x) result(isposinf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
+#ifdef CPRFJ
+       ieee_positive_inf
+#else
        ieee_positive_inf, &
        operator(==)
+#endif
   real(r8), intent(in) :: x
   logical :: isposinf
 
@@ -334,8 +338,12 @@ end function shr_infnan_isposinf_double
 elemental function shr_infnan_isposinf_real(x) result(isposinf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
+#ifdef CPRFJ
+       ieee_positive_inf
+#else
        ieee_positive_inf, &
        operator(==)
+#endif
   real(r4), intent(in) :: x
   logical :: isposinf
 
@@ -349,8 +357,12 @@ end function shr_infnan_isposinf_real
 elemental function shr_infnan_isneginf_double(x) result(isneginf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
+#ifdef CPRFJ
+       ieee_negative_inf
+#else
        ieee_negative_inf, &
        operator(==)
+#endif
   real(r8), intent(in) :: x
   logical :: isneginf
 
@@ -363,8 +375,12 @@ end function shr_infnan_isneginf_double
 elemental function shr_infnan_isneginf_real(x) result(isneginf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
+#ifdef CPRFJ
+       ieee_negative_inf
+#else
        ieee_negative_inf, &
        operator(==)
+#endif
   real(r4), intent(in) :: x
   logical :: isneginf
 
