@@ -668,7 +668,7 @@ contains
        waterflux_vars%qflx_h2osfc2topsoi(c)   = 0._r8
        waterflux_vars%qflx_gross_infl_soil(c) = 0._r8
        waterflux_vars%qflx_gross_evap_soil(c) = 0._r8
-       waterflux_vars%qflx_runoff_betr(c) = this%qflx_runoff_col(c)
+       waterflux_vars%qflx_runoff_col(c) = this%qflx_runoff_col(c)
     enddo
 
     do j = 1, ubj

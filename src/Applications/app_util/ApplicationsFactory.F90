@@ -58,8 +58,8 @@ contains
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
     !begin_appadd
-    use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
 #if (defined SBETR)
+    use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
     use ch4soilBGCReactionsType, only : ch4soil_bgc_reaction_type
     use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
     use simicBGCReactionsType , only : simic_bgc_reaction_type
@@ -81,10 +81,10 @@ contains
     asoibgc = .false.
     select case(trim(method))
     !begin_appadd
+#if (defined SBETR)
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
        bgc_type='type2_bgc'
-#if (defined SBETR)
     case ("ch4soil")
        asoibgc=.true.;allocate(bgc_reaction, source=ch4soil_bgc_reaction_type())
     case ("cdom","cdom_mosart")
@@ -117,8 +117,8 @@ contains
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
   !begin_appadd
-  use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
 #if (defined SBETR)
+  use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
   use ch4soilPlantSoilBGCType, only : ch4soil_plant_soilbgc_type
   use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
   use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
@@ -139,9 +139,9 @@ contains
 
   select case(trim(method))
   !begin_appadd
+#if (defined SBETR)
   case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
-#if (defined SBETR)
   case ("ch4soil")
      allocate(plant_soilbgc, source=ch4soil_plant_soilbgc_type())
   case ("cdom","cdom_mosart")
@@ -168,8 +168,8 @@ contains
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
   !begin_appadd
-  use ecacnpParaType   , only : ecacnp_para
 #if (defined SBETR)
+  use ecacnpParaType   , only : ecacnp_para
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
@@ -186,9 +186,9 @@ contains
 
    select case (trim(reaction_method))
   !begin_appadd
+#if (defined SBETR)
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
-#if (defined SBETR)
    case ("ch4soil")
      call ch4soil_para%readPars(ncid, bstatus)
    case ("cdom","cdom_mosart")
@@ -213,8 +213,8 @@ contains
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
   !begin_appadd
-  use ecacnpParaType   , only : ecacnp_para
 #if (defined SBETR)
+  use ecacnpParaType   , only : ecacnp_para
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
@@ -234,10 +234,10 @@ contains
 
    select case (trim(reaction_method))
    !begin_appadd
+#if (defined SBETR)
    case ("ecacnp","ecacnp_mosart")
      nparcols=0
      call ecacnp_para%Init(bstatus)
-#if (defined SBETR)
    case ("ch4soil")
      call ch4soil_para%Init(bstatus)
    case ("cdom","cdom_mosart")
@@ -260,8 +260,8 @@ contains
 
   ! set spinup strategies
   !begin_appadd
-  use ecacnpParaType  , only : ecacnp_para
 #if (defined SBETR)
+  use ecacnpParaType  , only : ecacnp_para
   use ch4soilParaType  , only : ch4soil_para
   use cdomParaType    , only : cdom_para
   use kecaParaType    , only : keca_para
@@ -273,9 +273,9 @@ contains
 
   select case (trim(reaction_method))
   !begin_appadd
+#if (defined SBETR)
   case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%set_spinup_factor()
-#if (defined SBETR)
   case ("ch4soil")
      call  ch4soil_para%set_spinup_factor()
   case ("cdom","cdom_mosart")
@@ -297,9 +297,9 @@ contains
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
   !begin_appadd
-  use ecacnpParaType   , only : ecacnp_para,ecacnp_paras
   use tracer_varcon    , only : reaction_method, nparcols
 #if (defined SBETR)
+  use ecacnpParaType   , only : ecacnp_para,ecacnp_paras
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
@@ -317,6 +317,7 @@ contains
 
    select case (trim(reaction_method))
    !begin_appadd
+#if (defined SBETR)
    case ("ecacnp","ecacnp_mosart")
     allocate(ecacnp_paras(begc:endc))
     nparcols=endc-begc+1
@@ -325,7 +326,6 @@ contains
       if(bstatus%check_status())return
       call ecacnp_paras(fl)%deep_copy(ecacnp_para)
     enddo
-!#if (defined SBETR)
 !   case ("ch4soil")
 !     call ch4soil_para%Init(bstatus)
 !   case ("cdom","cdom_mosart")
@@ -334,7 +334,7 @@ contains
 !     call simic_para%Init(bstatus)
 !   case ("keca")
 !     call keca_para%Init(bstatus)
-!#endif
+#endif
 !   case ("v1eca")
 !     call v1eca_para%Init(bstatus)
    !end_appadd

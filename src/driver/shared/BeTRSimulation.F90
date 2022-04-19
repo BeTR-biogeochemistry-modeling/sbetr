@@ -1158,7 +1158,7 @@ contains
       this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi(c)
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi(c)
       this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi(c,lbj:ubj)*1.e-3_r8
-      this%biophys_forc(c)%qflx_runoff_col(cc)          = waterflux_vars%qflx_runoff_betr(c)  !mm/s
+      this%biophys_forc(c)%qflx_runoff_col(cc)          = waterflux_vars%qflx_runoff(c)  !mm/s
     endif
     if(present(pf_waterflux_vars))then
       pp = 0

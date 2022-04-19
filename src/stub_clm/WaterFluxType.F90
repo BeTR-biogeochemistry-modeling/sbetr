@@ -31,7 +31,7 @@ module WaterfluxType
     real(r8), pointer :: qflx_sub_snow        (:)=> null()   ! col sublimation rate from snow pack (mm H2O /s) [+]
     real(r8), pointer :: qflx_h2osfc2topsoi   (:) => null()  ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi     (:) => null()  ! col liquid water coming from residual snow to topsoil (mm H2O/s)
-    real(r8), pointer :: qflx_runoff_betr          (:)   ! col total runoff (qflx_drain+qflx_surf+qflx_qrgwl) (mm H2O /s)s
+    real(r8), pointer :: qflx_runoff          (:)   ! col total runoff (qflx_drain+qflx_surf+qflx_qrgwl) (mm H2O /s)s
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -82,7 +82,7 @@ module WaterfluxType
     allocate(this%qflx_snow2topsoi     (begc:endc))              ; this%qflx_snow2topsoi     (:)   = nan
     allocate(this%qflx_h2osfc2topsoi   (begc:endc))              ; this%qflx_h2osfc2topsoi   (:)   = nan
     allocate( this%qflx_totdrain       (begc:endc))              ; this%qflx_totdrain        (:)   = nan
-    allocate(this%qflx_runoff_betr     (begc:endc))              ; this%qflx_runoff_betr     (:)   = nan
+    allocate(this%qflx_runoff     (begc:endc))              ; this%qflx_runoff     (:)   = nan
   end subroutine InitAllocate
 
 
