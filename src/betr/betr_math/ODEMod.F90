@@ -760,7 +760,6 @@ contains
     real(r8), intent(in)  :: dt       ! time stepping
     integer,  intent(in)  :: nprimeq  !
     real(r8), intent(out) :: y(neq)   ! updated state variable
-    external :: odefun
     interface
       subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
       use bshr_kind_mod , only : r8 => shr_kind_r8

@@ -431,7 +431,7 @@ contains
   character(len=*), intent(out) :: ymdhs
 
   write(ymdhs,'(I4.4,I2.2,I2.2,I2.2,I4.4)')this%cyears,this%moy,this%dom,&
-     int(this%tod/3600.0),int(mod(this%tod,3600.0))
+     int(this%tod/3600.0),int(mod(this%tod,3600._r8))
   end subroutine get_ymdhs
   !-------------------------------------------------------------------------------
   function its_a_new_hour(this)result(yesno)
@@ -440,7 +440,7 @@ contains
   logical :: yesno
 
 
-  yesno= abs(mod(this%tod, 3600.0))<1.e-3_r8
+  yesno= abs(mod(this%tod, 3600._r8))<1.e-3_r8
 
   end function its_a_new_hour
 
@@ -452,7 +452,7 @@ contains
   logical :: yesno
 
 
-  yesno= abs(mod(this%tod, 86400.0))<1.e-3_r8
+  yesno= abs(mod(this%tod, 86400._r8))<1.e-3_r8
 
   end function its_a_new_day
 
