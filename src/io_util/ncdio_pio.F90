@@ -16,7 +16,7 @@ module ncdio_pio
 ! check dimension, check variable
 
   use netcdf
-  use shr_sys_mod,  only : shr_sys_abort
+  use abortutils,  only : endrun
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
   use shr_assert_mod
@@ -262,7 +262,7 @@ module ncdio_pio
     write (iulog,*) 'CHECK_DIM error: mismatch of input dimension ',dimlen, &
       ' with expected value ',value,' for variable ', trim(dimname)
 
-    call shr_sys_abort(errMsg(mod_filename,__LINE__))
+    call endrun(errMsg(mod_filename,__LINE__))
   end if
 
   end subroutine check_dim
@@ -1465,7 +1465,7 @@ module ncdio_pio
 
     if (ni == 0 .or. nj == 0) then
        write(iulog,*) trim(subname),' ERROR: ni,nj = ',ni,nj,' cannot be zero '
-       call shr_sys_abort(errMsg(mod_filename, __LINE__))
+       call endrun(errMsg(mod_filename, __LINE__))
     end if
 
     if (nj == 1) then
