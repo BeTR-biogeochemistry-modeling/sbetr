@@ -121,7 +121,6 @@ contains
     NAN_ALLOC(this%errtracer_col                 (begc:endc, 1:ntracers))
     NAN_ALLOC(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
     NAN_ALLOC(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
-    write(iulog,*)'nsolid_equil_tracers',nsolid_equil_tracers,begc,endc,lbj,ubj
     if(nsolid_equil_tracers>0)then
       NAN_ALLOC(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
     endif  
