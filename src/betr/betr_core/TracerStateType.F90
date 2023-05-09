@@ -121,9 +121,15 @@ contains
     NAN_ALLOC(this%errtracer_col                 (begc:endc, 1:ntracers))
     NAN_ALLOC(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
     NAN_ALLOC(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
-    if(nsolid_equil_tracers>0)NAN_ALLOC(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
-    if(nvolatile_tracers>0)NAN_ALLOC(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))
-    if(nfrozen_tracers>0)NAN_ALLOC(this%tracer_conc_frozen_col        (begc:endc, lbj:ubj, 1:nfrozen_tracers))
+    if(nsolid_equil_tracers>0)then
+      NAN_ALLOC(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
+    endif  
+    if(nvolatile_tracers>0)then
+      NAN_ALLOC(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))
+    endif
+    if(nfrozen_tracers>0)then
+      NAN_ALLOC(this%tracer_conc_frozen_col        (begc:endc, lbj:ubj, 1:nfrozen_tracers))
+    endif
     NAN_ALLOC(this%beg_tracer_molarmass_col      (begc:endc, 1:ntracers))
     NAN_ALLOC(this%end_tracer_molarmass_col      (begc:endc, 1:ntracers))
 
