@@ -25,6 +25,37 @@ module ODEMod
   public :: get_rerr
 
 
+  abstract interface
+     subroutine odebbks(extra,y0,dt,t,nprimeq,neq,f)
+        use bshr_kind_mod , only : r8 => shr_kind_r8
+        use gbetrType     , only : gbetr_type
+        implicit none
+        class(gbetr_type), intent(inout) :: extra
+        real(r8)         , intent(in)    :: y0(neq)
+        real(r8)         , intent(in)    :: t
+        real(r8)         , intent(in)    :: dt
+        integer          , intent(in)    :: nprimeq
+        integer          , intent(in)    :: neq
+        real(r8)         , intent(out)   :: f(neq)
+     end subroutine odebbks
+  end interface
+
+
+  abstract interface
+     subroutine oderkx(extra,y0,dt,t,neq,f)
+        use bshr_kind_mod , only : r8 => shr_kind_r8
+        use gbetrType     , only : gbetr_type
+        implicit none
+        class(gbetr_type), target        :: extra
+        real(r8)         , intent(in)    :: y0(neq)
+        real(r8)         , intent(in)    :: t
+        real(r8)         , intent(in)    :: dt
+        integer          , intent(in)    :: neq
+        real(r8)         , intent(out)   :: f(neq)
+     end subroutine oderkx
+  end interface
+
+
   interface get_rerr
      module procedure get_rerr_v
      module procedure get_rerr_s
@@ -49,8 +80,19 @@ contains
     real(r8),           intent(in)  :: dt      !time step
     real(r8),           intent(out) :: y(neq)  !return values
     real(r8), optional, intent(out) :: pscal   !scaling factor
-    external :: odefun
-
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: pscal_loc
@@ -76,7 +118,19 @@ contains
     real(r8), intent(in)  :: dt         !time step
     real(r8), intent(out) :: y(neq)     !return value
 
-    external :: odefun
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: f1(neq)
@@ -108,9 +162,21 @@ contains
     real(r8),           intent(in)  :: dt
     real(r8),           intent(out) :: y(neq)
     real(r8), optional, intent(out) :: pscal
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
     type(betr_status_type), intent(out) :: bstatus
 
-    external :: odefun
 
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
@@ -168,7 +234,19 @@ contains
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
     type(betr_status_type), intent(out) :: bstatus
-    external :: odefun
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
 
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
@@ -297,7 +375,19 @@ contains
     integer,  intent(in)  :: nprimeq  !
     real(r8), intent(out) :: y(neq)   ! updated state variable
     type(betr_status_type), intent(out) :: bstatus
-    external :: odefun
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
 
     ! !LOCAL VARIABLES:
     real(r8) :: yc(neq)    !coarse time stepping solution
@@ -537,6 +627,19 @@ contains
     real(r8), intent(in)  :: t
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
+    interface
+      subroutine odefun(extra, y, dt2, tt,  neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
+
     ! !LOCAL VARIABLES:
     real(r8) :: k1(neq)
     real(r8) :: k2(neq)
@@ -545,7 +648,6 @@ contains
     real(r8) :: kt(neq)
     real(r8) :: ti, dt05, a
     integer :: n
-    external :: odefun
 
     ti = t
     dt05 = dt * 0.5_r8
@@ -605,12 +707,25 @@ contains
     real(r8), intent(in)  :: t
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
+
+    interface
+      subroutine odefun(extra, y, dt2, tt,  neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
+
     ! !LOCAL VARIABLES:
     real(r8) :: k1(neq)
     real(r8) :: k2(neq)
     real(r8) :: ti, dt05
     integer :: n
-    external :: odefun
 
     ti = t
     dt05 = dt * 0.5_r8
@@ -644,8 +759,19 @@ contains
     real(r8), intent(in)  :: dt       ! time stepping
     integer,  intent(in)  :: nprimeq  !
     real(r8), intent(out) :: y(neq)   ! updated state variable
-    external :: odefun
-
+    interface
+      subroutine odefun(extra, y, dt2, tt, nprimeq, neq, f)
+      use bshr_kind_mod , only : r8 => shr_kind_r8
+      use gbetrType     , only : gbetr_type
+      class(gbetr_type), target :: extra
+      integer,  intent(in)  :: neq      ! number of equations
+      real(r8), intent(in)  :: tt        ! time stamp
+      real(r8), intent(in)  :: dt2       ! time stepping
+      integer,  intent(in)  :: nprimeq  !
+      real(r8), intent(in)  :: y(neq)   ! updated state variable
+      real(r8), intent(out) :: f(neq)   ! derivative
+      end subroutine
+    end interface
     ! !LOCAL VARIABLES:
     real(r8) :: yc(neq)    !coarse time stepping solution
     real(r8) :: yf(neq)    !fine time stepping solution
