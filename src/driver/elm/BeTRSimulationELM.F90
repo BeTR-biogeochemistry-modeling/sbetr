@@ -261,11 +261,7 @@ contains
     use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
-#if (defined SBETR)
     use elm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
-#else
-    use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
-#endif
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_elm_type) , intent(inout) :: this
@@ -905,11 +901,7 @@ contains
 
   !this returns the flux back to ELM after doing soil BGC
   !this specifically returns plant nutrient yield
-#if (defined SBETR)
   use elm_time_manager    , only : get_nstep
-#else
-  use clm_time_manager    , only : get_nstep
-#endif
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
@@ -1461,11 +1453,7 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-#if (defined SBETR)
   use elm_time_manager   , only : get_nstep
-#else
-  use clm_time_manager   , only : get_nstep
-#endif
   use tracer_varcon      , only : lbcalib
   implicit none
   class(betr_simulation_elm_type), intent(inout)  :: this
@@ -1710,11 +1698,7 @@ contains
     phosphorusstate_vars, phosphorusflux_vars, pf_phosphorusflux_vars)
 
   use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
-#if (defined SBETR)
   use elm_time_manager    , only : get_nstep
-#else
-  use clm_time_manager    , only : get_nstep
-#endif
   implicit none
   class(betr_simulation_elm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds ! bounds
