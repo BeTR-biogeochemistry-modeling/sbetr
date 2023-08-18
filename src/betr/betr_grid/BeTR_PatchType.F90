@@ -28,7 +28,7 @@ contains
   end function create_betr_patch_type
   !-------------------------------------------------------------------------------
   subroutine Init(this, bounds)
-  use betr_varcon         , only : ispval => bispval
+  use betr_varcon         , only : ispval => bispval,maxpft => betr_maxpft
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use betr_decompMod      , only : betr_bounds_type
   implicit none
@@ -41,6 +41,6 @@ contains
   allocate(this%wtcol(begp:endp)); this%wtcol(:) = nan
   allocate(this%column(begp:endp)); this%column(:) = 1
   allocate(this%itype(begp:endp)); this%itype(:) = ispval
-  allocate(this%crop(begp:endp)); this%crop(:) = nan
+  allocate(this%crop(0:maxpft)); this%crop(:) = nan
   end subroutine Init
 end module BeTR_PatchType
