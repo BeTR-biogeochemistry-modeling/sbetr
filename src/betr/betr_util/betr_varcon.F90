@@ -42,6 +42,7 @@ module betr_varcon
   real(r8), public, parameter ::  bsecspday= SHR_CONST_CDAY  ! Seconds per day
 
   integer, public :: betr_maxpatch_pft = 1
+  integer, public :: betr_maxpft=50
   integer, public :: betr_max_soilorder = 1
   real(r8), public :: kyr_spinup=20._r8
 

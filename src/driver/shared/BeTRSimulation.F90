@@ -51,7 +51,7 @@ module BeTRSimulation
   use BeTR_biogeoStateType     , only : betr_biogeo_state_type, create_betr_biogeo_state
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type, create_betr_biogeoFlux
   use BeTR_TimeMod             , only : betr_time_type
-  use betr_varcon              , only : betr_maxpatch_pft
+  use betr_varcon              , only : betr_maxpatch_pft,betr_maxpft
   use BetrStatusType           , only : betr_status_type, create_betr_status_type
   use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
   use betr_columnType          , only : betr_column_type, create_betr_column_type
@@ -2267,6 +2267,8 @@ contains
         endif
       enddo
       this%betr_pft(c)%npfts = pp
+      this%betr_pft(c)%crop(0:betr_maxpft)=crop(0:betr_maxpft)
+      print*,'crop',size(crop),betr_maxpatch_pft,col%npfts(c), this%betr_pft(c)%npfts
     endif
   enddo
 
