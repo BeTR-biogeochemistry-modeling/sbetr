@@ -11,7 +11,7 @@ function(add_betr_pfunit_test exe)
   endforeach()
 
   # call pfunit preprocessor to generate F90 sources
-  include(PreprocessMacro)
+  include(add_pfunit_sources)
   add_pfunit_sources(sources ${test_sources})
 
   include_directories(${CMAKE_BINARY_DIR}/mod)
@@ -22,10 +22,12 @@ function(add_betr_pfunit_test exe)
   endforeach()
 
   # need a copy of the pfunit driver
+  message(("{CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}"))
   configure_file(${CMAKE_BINARY_DIR}/include/driver.F90 driver.F90 COPYONLY)
 
   # create the executable
-  add_executable(${exe} ${sources} driver.F90)
+#  add_executable(${exe} ${sources} driver.F90)
+add_executable(${exe} ${sources})
   target_link_libraries(${exe} pfunit;${BETR_LIBRARIES})
   set_target_properties(${exe} PROPERTIES LINKER_LANGUAGE Fortran)
   set_target_properties(${exe} PROPERTIES COMPILE_FLAGS "-DCMAKE_CURRENT_SOURCE_DIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}\\\"")

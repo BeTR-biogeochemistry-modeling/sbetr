@@ -6,10 +6,10 @@
 	url = git@github.com:HDFGroup/hdf5.git
 [submodule "3rd-party/netcdf-c"]
 	path = 3rd-party/netcdf-c
-	url = https://github.com/jinyun1tang/netcdf-c.git
+	url = git@github.com:jinyun1tang/netcdf-c.git
 [submodule "3rd-party/netcdf-fortran"]
 	path = 3rd-party/netcdf-fortran
-	url = https://github.com/jinyun1tang/netcdf-fortran.git
+	url = git@github.com:jinyun1tang/netcdf-fortran.git
 [submodule "3rd-party/pfunit"]
 	path = 3rd-party/pfunit
-	url = https://github.com/jinyun1tang/pFUnit.git
+	url = git@github.com:jinyun1tang/pFUnit.git
