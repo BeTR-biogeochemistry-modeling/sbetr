@@ -3,6 +3,7 @@ include_directories(${PROJECT_BINARY_DIR}/include)
 # Build pfunit, a fortran unit testing library.
 if (NOT EXISTS ${PROJECT_BINARY_DIR}/lib/libpfunit.a)
   message("Configuring pfunit...")
+  
   execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/pfunit
     RESULT_VARIABLE stat)
 

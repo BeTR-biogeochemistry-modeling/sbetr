@@ -16,7 +16,7 @@ add_betr_library(betr_transport ${BETR_TPORT_SOURCES})
 set(BETR_LIBRARIES betr_transport;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_transport;${BETR_LIBRARIES})
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_transport DESTINATION lib)

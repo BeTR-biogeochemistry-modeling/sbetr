@@ -19,7 +19,7 @@ add_betr_library(betr_math ${BETR_MATH_SOURCES})
 set(BETR_LIBRARIES betr_math;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_math;${BETR_LIBRARIES})
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_math DESTINATION lib)

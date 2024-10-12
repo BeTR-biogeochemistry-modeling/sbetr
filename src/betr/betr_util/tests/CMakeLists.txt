@@ -1,5 +1,5 @@
 set(BETR_UTILS_TESTS
-  test_betr_utils.pfunit)
+  test_betr_utils.pf)
 
 configure_file(testSuites.inc testSuites.inc COPYONLY)
 

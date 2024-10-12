@@ -1,5 +1,5 @@
 set(BETR_MATH_TESTS
-  test_betr_mathfunc.pfunit)
+  test_betr_mathfunc.pf)
 
 configure_file(testSuites.inc testSuites.inc COPYONLY)
 

@@ -1,5 +1,5 @@
 set(BETR_TPORT_TESTS
-  test_betr_transport.pfunit)
+  test_betr_transport.pf)
 
 # NOTE(bja, 201603) you must add tests to testSuites.inc as
 # '${MODULE_NAME}_suite' inorder to register the tests and have them

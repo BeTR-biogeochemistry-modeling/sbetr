@@ -3,7 +3,7 @@ function(add_betr_pfunit_test exe)
 
   # separate the input args into test sources and include dirs
   foreach (arg ${ARGN})
-    if (arg MATCHES ".pfunit")
+    if (arg MATCHES ".pf")
       list(APPEND test_sources ${arg})
     else()
       list(APPEND include_dirs ${arg})
@@ -26,8 +26,8 @@ function(add_betr_pfunit_test exe)
   configure_file(${CMAKE_BINARY_DIR}/include/driver.F90 driver.F90 COPYONLY)
 
   # create the executable
-#  add_executable(${exe} ${sources} driver.F90)
-add_executable(${exe} ${sources})
+  add_executable(${exe} ${sources} driver.F90)
+#add_executable(${exe} ${sources})
   target_link_libraries(${exe} pfunit;${BETR_LIBRARIES})
   set_target_properties(${exe} PROPERTIES LINKER_LANGUAGE Fortran)
   set_target_properties(${exe} PROPERTIES COMPILE_FLAGS "-DCMAKE_CURRENT_SOURCE_DIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}\\\"")
